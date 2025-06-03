@@ -1,90 +1,18 @@
 <?php
-
-// require_once "../controladores/usuarios.controlador.php";
-// require_once "../modelos/usuarios.modelo.php";
-
-// class RutaUsuarios
-// {
-
-// 	/*=============================================
-// 	EDITAR USUARIO
-// 	=============================================*/
-
-// 	public $idUsuario;
-
-// 	public function ajaxEditarUsuario()
-// 	{
-
-// 		$item = "id";
-// 		$valor = $this->idUsuario;
-
-// 		$respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
-
-// 		echo json_encode($respuesta);
-// 	}
-
-// 	/*=============================================
-// 	ACTIVAR USUARIO
-// 	=============================================*/
-
-// 	public $activarUsuario;
-// 	public $activarId;
-
-
-// 	public function ajaxActivarUsuario()
-// 	{
-
-// 		$tabla = "usuarios";
-
-// 		$item1 = "status";
-// 		$valor1 = $this->activarUsuario;
-
-// 		$item2 = "id";
-// 		$valor2 = $this->activarId;
-
-// 		$respuesta = ModeloUsuarios::mdlActualizarUsuario($tabla, $item1, $valor1, $item2, $valor2);
-// 	}
-
-// 	/*=============================================
-// 	VALIDAR NO REPETIR USUARIO
-// 	=============================================*/
-
-// 	public $validarUsuario;
-
-// 	public function ajaxValidarUsuario()
-// 	{
-
-// 		$item = "usuario";
-// 		$valor = $this->validarUsuario;
-
-// 		$respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
-
-// 		echo json_encode($respuesta);
-// 	}
-	
-// 	/*=============================================
-// 	ELIMINAR USUARIO
-// 	=============================================*/
-
-// 	public $idEliminarUsuario;
-
-// 	public function ajaxEliminarUsuario()
-// 	{
-
-// 		$respuesta = ControladorUsuarios::ctrEliminarUsuario();
-
-// 		echo json_encode($respuesta);
-// 	}
-
-// }
-
 /*=============================================
 REGISTRAR NUEVO USUARIO
 =============================================*/
-if (isset($_POST["nuevoUsername"])) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["nuevoUsername"])) {
+  
+  $encriptar = crypt($_POST["nuevoPassword"], '$2a$07$asxx54ahjppf45sd87a5a4dDDGsystemdev$'); // Encriptar la contraseña
 
-  $encriptar = crypt($_POST["nuevoPassword"], '$2a$07$asxx54ahjppf45sd87a5a4dDDGsystemdev$');
+  // Validar que los campos no estén vacíos
+  if (empty($_POST["nuevoNombres"]) || empty($_POST["nuevoApellidos"]) || empty($_POST["nuevoCI"]) || empty($_POST["nuevoUsername"]) || empty($_POST["nuevoPassword"])) {
+    echo json_encode(["mensaje" => "Todos los campos son obligatorios."]);
+    exit;
+  }
 
+  // Crear un array con los datos del nuevo usuario
   $datos = array(
     "first_name" => trim($_POST["nuevoNombres"]),
     "last_name" => trim($_POST["nuevoApellidos"]),
@@ -93,12 +21,30 @@ if (isset($_POST["nuevoUsername"])) {
     "password" => $encriptar
   );
 
+  // Enviar los datos al controlador para crear el usuario
   $respuesta = ControladorUsuarios::ctrCrearUsuario($datos);
 
+  // Verificar la respuesta del controlador
   if ($respuesta == "ok") {
-    echo json_encode(["mensaje" => "usuario creado correctamente"]);
+    echo json_encode([
+      "status" => 201,
+      "success" => true,
+      "data" => [
+        "nombres" => $datos["first_name"],
+        "apellidos" => $datos["last_name"],
+        "cedula" => $datos["ci"],
+        "usuario" => $datos["username"]
+      ],
+      "mensaje" => "usuario creado correctamente"
+    ]);
   } else {
-    echo json_encode(["mensaje" => "error al crear el usuario"]);
+
+    echo json_encode([
+      "status" => 400,
+      "success" => false,
+      "data" => null,
+      "mensaje" => "error al crear el usuario"
+    ]);
   }
 
 }

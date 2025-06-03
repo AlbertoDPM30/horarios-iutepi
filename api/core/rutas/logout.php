@@ -16,7 +16,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION["logged"]) == "ok")
     session_destroy();
 
     echo json_encode([
-        "status" => "success",
+        "status" => 201,
+        "success" => true,
         "message" => "Sesion cerrada correctamente."
     ]);
 
@@ -24,7 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION["logged"]) == "ok")
     
     // Si no se ha iniciado sesión o los parámetros son incorrectos
     echo json_encode([
-        "status" => "error",
+        "status" => 400,
+        "success" => false,
         "mensaje" => "No se pudo cerrar la sesión.",
         "descripcion" => "Parametro invalido o sesion no iniciada."
     ]);

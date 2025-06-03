@@ -27,8 +27,6 @@ class ControladorUsuarios
 				// Verificar si la respuesta es un array y si el usuario y contraseña coinciden
 				if (is_array($respuesta) && $respuesta["username"] == $datos["username"] && $respuesta["password"] == $encriptar) {
 
-					// session_start();
-
 					$_SESSION["logged"] = "ok"; // Variable de sesión para indicar que el usuario ha iniciado sesión
 					$_SESSION["user_id"] = $respuesta["user_id"]; // ID del usuario
 					$_SESSION["nombres"] = $respuesta["first_name"]; // Nombre del usuario
