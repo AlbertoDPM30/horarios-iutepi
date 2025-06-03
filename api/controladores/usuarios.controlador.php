@@ -51,6 +51,7 @@ class ControladorUsuarios
 					$item2 = "user_id";
 					$valor2 = $respuesta["user_id"];
 
+					// Actualizar el último login del usuario en la base de datos
 					$ultimoLogin = ModeloUsuarios::mdlActualizarUsuario($tabla, $item1, $valor1, $item2, $valor2);
 
 					if ($ultimoLogin == "ok") { 
@@ -62,6 +63,7 @@ class ControladorUsuarios
 					
 				} else {
 
+					// Si las credenciales son incorrectas, limpiar las variables de sesión
 					$_SESSION["logged"] = null;
 					$_SESSION["user_id"] = null;
 					$_SESSION["nombres"] = null;
@@ -71,7 +73,7 @@ class ControladorUsuarios
 					
 					return 'error'; // Retornar 'error' si las credenciales son incorrectas
 					
-					session_abort();
+					session_abort(); // Terminar la sesión actual
 				}
 			}
 		}
