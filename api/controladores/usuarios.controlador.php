@@ -113,7 +113,7 @@ class ControladorUsuarios
 	}
 
 	/*=============================================
-	REGISTRO DE USUARIO
+	REGISTRAR USUARIO
 	=============================================*/
 
 	static public function ctrCrearUsuario()
@@ -217,6 +217,49 @@ class ControladorUsuarios
 		}
 	}
 
+	/*=============================================
+	ACTUALIZAR USUARIO
+	=============================================*/
+
+	static public function ctrActualizarStatusUsuario(){
+
+		if (!isset($_POST["actualizarStatus"]) || ($_POST["actualizarStatus"] != "1" && $_POST["actualizarStatus"] != "0")) {
+			echo json_encode([
+				"error" => "El valor enviado debe ser 1 o 0"
+			]);
+			exit;
+		}
+		
+		$tabla = "users";
+
+		// Recibir un valor binario (0 - 1)
+		$item1 = "status";
+		$valor1 = $_POST["actualizarStatus"];
+
+		// Recibir el id del usuario a actualizar
+		$item2 = "user_id";
+		$valor2 = $_POST["actualizarIdUsuario"];
+
+		// Actualizar el último login del usuario en la base de datos
+		$respuesta = ModeloUsuarios::mdlActualizarUsuario($tabla, $item1, $valor1, $item2, $valor2);
+
+		if ($respuesta == "ok") { 
+		
+			// Mensaje de exito si la respuesta es "ok"
+			http_response_code(201);
+			return json_encode([
+				"status" => 201,
+				"success" => true,
+				"mensaje" => "Status actualizado correctamente"
+			]); 
+		} else {
+
+			// Si la respuesta no es "ok", significa que hubo un error al Actualizar el status
+			http_response_code(500);
+			return json_encode(["Error" => "Ha ocurrido un problema al actualizar el status"]);
+		}
+		
+	}
 
 	/*=============================================
 	ELIMINAR USUARIO

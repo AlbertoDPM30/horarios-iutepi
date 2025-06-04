@@ -47,7 +47,7 @@ if(isset($_SESSION["logged"]) == "ok") {
       exit;
     }
     
-    // Mostramos los datos desde el controlador usuario del usuario creado
+    // Mostramos los datos desde el controlador del usuario creado
     echo ControladorUsuarios::ctrCrearUsuario();
 
   }
@@ -59,31 +59,40 @@ if(isset($_SESSION["logged"]) == "ok") {
 
     // Se muestran los datos recibidos del controlador
     echo ControladorUsuarios::ctrEditarUsuario();
-
   }
 
   /*=============================================
-  ACTIVAR USUARIO
+  ACTUALIZAR STATUS USUARIO (POST)
   =============================================*/
+  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["actualizarIdUsuario"]) && isset($_POST["actualizarStatus"])) {
 
-  // if (isset($_POST["activarUsuario"])) {
-
-  // 	$activarUsuario = new RutaUsuarios();
-  // 	$activarUsuario->activarUsuario = $_POST["activarUsuario"];
-  // 	$activarUsuario->activarId = $_POST["activarId"];
-  // 	$activarUsuario->ajaxActivarUsuario();
-  // }
+    // Se muestran los datos recibidos del controlador
+    echo ControladorUsuarios::ctrActualizarStatusUsuario();
+  }
 
   /*=============================================
   VALIDAR NO REPETIR USUARIO
   =============================================*/
 
-  // if (isset($_POST["validarUsuario"])) {
+  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["validarUsuario"])) {
 
-  // 	$valUsuario = new RutaUsuarios();
-  // 	$valUsuario->validarUsuario = $_POST["validarUsuario"];
-  // 	$valUsuario->ajaxValidarUsuario();
-  // }
+    $item = "username"; // Columna de la DB
+    $valor = $_POST['validarUsuario']; // username a validar
+
+    // Enviar los datos al controlador para obtener el usuario
+    $respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
+
+    // Enviamos la respuesta al cliente si ya existe ese username
+    if ($respuesta) {
+      
+      echo json_encode([
+        "status" => 200,
+        "success" => true,
+        "aviso" => "Usuario existente"
+      ]);
+    }
+
+  }
 
   /*=============================================
   ELMINAR USUARIO
