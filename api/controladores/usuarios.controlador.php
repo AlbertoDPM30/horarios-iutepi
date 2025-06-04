@@ -1,5 +1,7 @@
 <?php
 
+require_once "config/autenticacion.php"; // Importar la clase de autenticación
+
 class ControladorUsuarios
 {
 
@@ -29,7 +31,7 @@ class ControladorUsuarios
 
 					if($respuesta["status"] !== 1) {
 						http_response_code(401);
-						echo json_encode([
+						return json_encode([
 							"status" => 401,
 							"success" => false,
 							"mensaje" => "Este usuario no se encuentra activo. Comunicarse con un administrador"
@@ -37,12 +39,15 @@ class ControladorUsuarios
 						exit;
 					}
 
+					$token = Autenticacion::generarToken($respuesta["user_id"]); // Generar un token de autenticación
+					
 					$_SESSION["logged"] = "ok"; // Variable de sesión para indicar que el usuario ha iniciado sesión
 					$_SESSION["user_id"] = $respuesta["user_id"]; // ID del usuario
 					$_SESSION["nombres"] = $respuesta["first_name"]; // Nombre del usuario
 					$_SESSION["apellidos"] = $respuesta["last_name"]; // Apellido del usuario
 					$_SESSION["username"] = $respuesta["username"]; // Nombre de usuario
 					$_SESSION["ci"] = $respuesta["ci"]; // Cédula de identidad del usuario
+					$_SESSION["token"] = $token; // Token de autenticación
 					
 					/*=============================================
 					REGISTRAR FECHA PARA SABER EL ÚLTIMO LOGIN
@@ -66,21 +71,34 @@ class ControladorUsuarios
 						// Iniciar sesión y guardar los datos del usuario en la sesión
 						http_response_code(201);
 						return json_encode([
-							"logged:" => $_SESSION["logged"],
-							"id:" => $_SESSION["user_id"],
-							"nombres:" => $_SESSION["nombres"],
-							"apellidos:" => $_SESSION["apellidos"],
-							"usuario:" => $_SESSION["username"],
-							"cedula" => $_SESSION["ci"]
+							"status" => 201,
+							"success" => true,
+							"data" => [
+								"logged:" => $_SESSION["logged"],
+								"id:" => $_SESSION["user_id"],
+								"nombres:" => $_SESSION["nombres"],
+								"apellidos:" => $_SESSION["apellidos"],
+								"usuario:" => $_SESSION["username"],
+								"cedula" => $_SESSION["ci"],
+								"token" => $_SESSION["token"],
+							],
+							"mensaje" => "Inicio de sesion exitoso"
 						]); 
 					} else {
 
 						// Si la respuesta no es "ok", significa que hubo un error al iniciar sesión
 						http_response_code(500);
-						return json_encode(["Error" => "Usuario o contraseña incorrectos."]);
+						return json_encode([
+							"status" => 500,
+							"success" => false,
+							"Error" => "Usuario o contraseña incorrectos.",
+							"mensaje" => "Ha ocurrido un problema al iniciar sesion, Contacte con un Administrador"
+						]);
 					}
 					
 				} else {
+					
+					session_abort(); // Terminar la sesión actual
 
 					// Si las credenciales son incorrectas, limpiar las variables de sesión
 					$_SESSION["logged"] = null;
@@ -89,10 +107,9 @@ class ControladorUsuarios
 					$_SESSION["apellidos"] = null;
 					$_SESSION["username"] = null;
 					$_SESSION["ci"] = null;
+					$_SESSION["token"] = null;
 					
 					return 'error'; // Retornar 'error' si las credenciales son incorrectas
-					
-					session_abort(); // Terminar la sesión actual
 				}
 			}
 		}

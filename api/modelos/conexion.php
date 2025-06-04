@@ -1,23 +1,25 @@
 <?php
 
+require_once __DIR__ . '/../config/env.php';
+
 class Conexion
 {
 
 	static public function conectar()
 	{
 
-		// $link = new PDO(
-		// 	"mysql:host=localhost;dbname=horarios",
-		// 	"root",
-		// 	""
-		// );
-		
-		$link = new PDO(
-			"mysql:host=localhost;dbname=prueba_horarios",
-			"root",
-			""
-		);
+		$engine = $GLOBALS['env']['DB_ENGINE'];
+		$host = $GLOBALS['env']['DB_HOST'];
+		$user = $GLOBALS['env']['DB_USER'];
+		$pass = $GLOBALS['env']['DB_PASS'];
+		$dbname = $GLOBALS['env']['DB_NAME'];
 
+		$link = new PDO(
+			$engine.':host='.$host.';'.'dbname='.$dbname,
+			$user,
+			$pass
+		);
+		
 		$link->exec("set names utf8");
 
 		return $link;
