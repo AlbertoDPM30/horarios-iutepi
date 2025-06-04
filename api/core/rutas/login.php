@@ -16,6 +16,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["username"]) && isset(
     if ($respuesta == "ok") {
 
         // Iniciar sesión y guardar los datos del usuario en la sesión
+        http_response_code(201);
         echo json_encode([
             "Logged:" => $_SESSION["logged"],
             "ID:" => $_SESSION["user_id"],
@@ -27,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["username"]) && isset(
     } else {
 
         // Si la respuesta no es "ok", significa que hubo un error al iniciar sesión
+        http_response_code(500);
         echo json_encode(["Error" => "Usuario o contraseña incorrectos."]);
     }
 
@@ -34,6 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["username"]) && isset(
 } else {
 
     // Si no se han enviado los parámetros necesarios o son incorrectos
+    http_response_code(500);
     echo json_encode(["Error" => "Parametros o datos Incorrectos."]);
 }
 

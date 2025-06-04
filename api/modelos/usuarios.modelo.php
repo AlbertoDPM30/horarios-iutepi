@@ -95,16 +95,14 @@ class ModeloUsuarios{
 		$stmt = Conexion::conectar()->prepare("UPDATE $tabla 	SET 	first_name 	= :first_name,
 																		last_name 	= :last_name, 
 																		ci 			= :ci,
-																		username 	= :username, 
-																		password 	= :password
+																		updated_at	= :updated_at
 																WHERE 	user_id 	= :user_id");
 
 		$stmt->bindParam(":user_id", $datos["user_id"], PDO::PARAM_INT);
 		$stmt->bindParam(":first_name", $datos["first_name"], PDO::PARAM_STR);
 		$stmt->bindParam(":last_name", $datos["last_name"], PDO::PARAM_STR);
 		$stmt->bindParam(":ci", $datos["ci"], PDO::PARAM_STR);
-		$stmt->bindParam(":username", $datos["username"], PDO::PARAM_STR);
-		$stmt->bindParam(":password", $datos["password"], PDO::PARAM_STR);
+		$stmt->bindParam(":updated_at", $datos["updated_at"], PDO::PARAM_STR);
 
 		if($stmt -> execute()){
 
