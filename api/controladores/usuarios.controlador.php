@@ -179,6 +179,16 @@ class ControladorUsuarios
 		date_default_timezone_set('America/Caracas');
 
 		$fechaActualizacion = date('Y-m-d H:i:s');
+		
+		// Se evita que se edite el usuario con ID 1 (el master)
+		if($_POST["editarIdUsuario"] == 1) {
+			http_response_code(403);
+			return json_encode([
+				"status" => 403,
+				"success" => false,
+				"mensaje" => "No se puede editar el usuario con ID 1"
+			]);
+		}
 
 		// Crear un array con los datos del usuario a editar
 		$datos = array(
@@ -223,13 +233,24 @@ class ControladorUsuarios
 
 	static public function ctrActualizarStatusUsuario(){
 
+		// si el valor no está definido o no es 1 o 0, retornar un error
 		if (!isset($_POST["actualizarStatus"]) || ($_POST["actualizarStatus"] != "1" && $_POST["actualizarStatus"] != "0")) {
-			echo json_encode([
+			return json_encode([
 				"error" => "El valor enviado debe ser 1 o 0"
 			]);
 			exit;
 		}
 		
+		// Se evita que se edite el usuario con ID 1 (el master)
+		if($_POST["actualizarIdUsuario"] == 1) {
+			http_response_code(403);
+			return json_encode([
+				"status" => 403,
+				"success" => false,
+				"mensaje" => "No se puede modificar el status del usuario con ID 1"
+			]);
+		}
+
 		$tabla = "users";
 
 		// Recibir un valor binario (0 - 1)
@@ -267,8 +288,19 @@ class ControladorUsuarios
 
 	static public function ctrEliminarUsuario(){
 
+		// Se evita que se elimine el usuario con ID 1 (el master)
+		if($_POST["EliminarIdUsuario"] == 1) {
+			http_response_code(403);
+			return json_encode([
+				"status" => 403,
+				"success" => false,
+				"mensaje" => "No se puede eliminar el usuario con ID 1"
+			]);
+		}
+
 		$tabla ="users";
-		$datos = $_POST["EliminarIdUsuario"];
+
+		$datos = $_POST["EliminarIdUsuario"]; // Recibir el id del usuario a eliminar
 
 		$respuesta = ModeloUsuarios::mdlEliminarUsuario($tabla, $datos);
 

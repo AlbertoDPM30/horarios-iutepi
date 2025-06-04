@@ -31,7 +31,7 @@ if(isset($_SESSION["logged"]) == "ok") {
     json_encode([
       "status" => 401,
       "success" => false,
-      "error" => "Parametro o dato incorrectos"
+      "error" => "Parametros o datos incorrectos"
     ]);
   }
 
