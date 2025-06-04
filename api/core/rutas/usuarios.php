@@ -97,12 +97,10 @@ if(isset($_SESSION["logged"]) == "ok") {
   /*=============================================
   ELMINAR USUARIO
   =============================================*/
-  // if (isset($_POST["idEliminarUsuario"])) {
+  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["EliminarIdUsuario"])) {
 
-  // 	$Eliminar = new RutaUsuarios();
-  // 	$Eliminar->idEliminarUsuario = $_POST["idEliminarUsuario"];
-  // 	$Eliminar->ajaxEliminarUsuario();
-  // }
+    echo ControladorUsuarios::ctrEliminarUsuario();
+  }
 
 } else {
 

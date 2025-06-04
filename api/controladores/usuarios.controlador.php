@@ -267,14 +267,28 @@ class ControladorUsuarios
 
 	static public function ctrEliminarUsuario(){
 
-		if(isset($_POST["idEliminarUsuario"])){
+		$tabla ="users";
+		$datos = $_POST["EliminarIdUsuario"];
 
-			$tabla ="usuarios";
-			$datos = $_POST["idEliminarUsuario"];
+		$respuesta = ModeloUsuarios::mdlEliminarUsuario($tabla, $datos);
 
-			$respuesta = ModeloUsuarios::mdlEliminarUsuario($tabla, $datos);
+		if ($respuesta == "ok") {
 
-			return $respuesta;
+			http_response_code(200);
+			return json_encode([
+				"status" => 200,
+				"success" => true,
+				"mensaje" => "Usuario eliminado con exito"
+			]);
+		} else {
+
+			http_response_code(500);
+			return json_encode([
+				"status" => 500,
+				"success" => false,
+				"error" => "Usuario NO eliminado",
+				"mensaje" => "Ha ocurrido un problema al intentar eliminar este usuario, Contacte con un Administrador"
+			]);
 		}
 
 	}
