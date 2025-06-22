@@ -9,6 +9,9 @@ session_start();
   if (isset($_GET["ruta"])) {
 
     if (
+
+      //PROFESORES
+      $_GET["ruta"] == "profesores"                 ||                  
       // USUARIOS               
       $_GET["ruta"] == "login"                      ||                  
       $_GET["ruta"] == "logout"                     ||                  
