@@ -2,7 +2,7 @@
 
 require_once "config/autenticacion.php"; // Importar la clase de autenticación
 
-class ControladorUsuarios
+class ControladorProfesores
 {
 
 	/*=============================================

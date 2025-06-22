@@ -3,26 +3,26 @@
 if(isset($_SESSION["logged"]) == "ok") {
 
   /*=============================================
-  OBTENER USUARIO(S) (POST || GET)
+  OBTENER PROFESOR(ES) (POST || GET)
   =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdUsuario'])) {
+  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdProfesor'])) {
 
-    // Si se quiere obtener un solo usuario se le da valor a los parametros
-    $item = "user_id"; // Columna de la DB
-    $valor = $_POST['obtenerIdUsuario']; // ID del usuario que se quiere obtener
+    // Si se quiere obtener un solo profesor se le da valor a los parametros
+    $item = "teacher_id"; // Columna de la DB
+    $valor = $_POST['obtenerIdProfesor']; // ID del profesor que se quiere obtener
 
-    // Enviar los datos al controlador para obtener el usuario
-    $respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
+    // Enviar los datos al controlador para obtener el profesor
+    $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
 
     echo json_encode($respuesta); // Enviamos la respuesta al cliente
 
-  } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdUsuario'])) {
+  } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdProfesor'])) {
 
     $item = null;
     $valor = null;
 
-    // Enviar los datos al controlador para obtener los usuarios
-    $respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
+    // Enviar los datos al controlador para obtener los profesores
+    $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
 
     echo json_encode($respuesta); // Enviamos la respuesta al cliente
 
@@ -36,70 +36,61 @@ if(isset($_SESSION["logged"]) == "ok") {
   }
 
   /*=============================================
-  REGISTRAR NUEVO USUARIO (POST)
+  REGISTRAR NUEVO PROFESOR (POST)
   =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["nuevoUsername"])) {
+  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["nuevoNombreProfesor"])) {
 
     // Validar que los campos no estén vacíos
-    if (empty($_POST["nuevoNombres"]) || empty($_POST["nuevoApellidos"]) || empty($_POST["nuevoCI"]) || empty($_POST["nuevoUsername"]) || empty($_POST["nuevoPassword"])) {
+    if (empty($_POST["nuevoNombreProfesor"]) || empty($_POST["nuevoCIProfesor"])) {
 
       echo json_encode(["mensaje" => "Todos los campos son obligatorios."]);
       exit;
     }
     
-    // Mostramos los datos desde el controlador del usuario creado
-    echo ControladorUsuarios::ctrCrearUsuario();
+    // Mostramos los datos desde el controlador del profesor creado
+    echo ControladorProfesores::ctrCrearProfesor();
 
   }
 
   /*=============================================
-  EDITAR USUARIO (POST)
+  EDITAR PROFESOR (POST)
   =============================================*/
-  if($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["editarIdUsuario"])) {
+  if($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["editarIdProfesor"])) {
 
     // Se muestran los datos recibidos del controlador
-    echo ControladorUsuarios::ctrEditarUsuario();
+    echo ControladorProfesores::ctrEditarProfesor();
   }
 
   /*=============================================
-  ACTUALIZAR STATUS USUARIO (POST)
-  =============================================*/
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["actualizarIdUsuario"]) && isset($_POST["actualizarStatus"])) {
-
-    // Se muestran los datos recibidos del controlador
-    echo ControladorUsuarios::ctrActualizarStatusUsuario();
-  }
-
-  /*=============================================
-  VALIDAR NO REPETIR USUARIO
+  VALIDAR NO REPETIR PROFESOR
   =============================================*/
 
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["validarUsuario"])) {
+  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["validarCIProfesor"])) {
 
-    $item = "username"; // Columna de la DB
-    $valor = $_POST['validarUsuario']; // username a validar
+    $item = "ci_code"; // Columna de la DB
+    $valor = $_POST['validarCIProfesor']; // ci a validar
 
-    // Enviar los datos al controlador para obtener el usuario
-    $respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
+    // Enviar los datos al controlador para obtener el profesor
+    $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
 
-    // Enviamos la respuesta al cliente si ya existe ese username
+    // Enviamos la respuesta al cliente si ya existe esa ci
     if ($respuesta) {
       
       echo json_encode([
         "status" => 200,
         "success" => true,
-        "aviso" => "Usuario existente"
+        "aviso" => "Esta CI ya se encuentra registrada"
       ]);
     }
 
   }
 
   /*=============================================
-  ELMINAR USUARIO
+  ELMINAR PROFESOR
   =============================================*/
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["EliminarIdUsuario"])) {
+  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["EliminarIdProfesor"])) {
 
-    echo ControladorUsuarios::ctrEliminarUsuario();
+    echo ControladorProfesores::ctrEliminarProfesor();
   }
 
 } else {

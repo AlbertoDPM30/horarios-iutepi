@@ -81,7 +81,7 @@ class ModeloProfesores{
 	EDITAR PROFESOR (PUT)
 	=============================================*/
 
-	static public function mdlEditarUsuario($tabla, $datos){
+	static public function mdlEditarProfesor($tabla, $datos){
 	
 		$stmt = Conexion::conectar()->prepare("UPDATE $tabla 	SET 	name 		= :name,
 																		ci_code		= :ci_code,
