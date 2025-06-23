@@ -41,7 +41,7 @@ class ControladorProfesores
 			// Verificar la respuesta del controlador
 			if ($respuesta == "ok") {
 
-				// Si es correcta mostrará los datos del usuario recien registrado
+				// Si es correcta mostrará los datos del profesor recien registrado
 				http_response_code(201);
 				return json_encode([
 					"status" => 201,
@@ -126,7 +126,7 @@ class ControladorProfesores
 
 		$tabla ="teachers";
 
-		$datos = $_POST["EliminarIdProfesor"]; // Recibir el id del usuario a eliminar
+		$datos = $_POST["EliminarIdProfesor"]; // Recibir el id del profesor a eliminar
 
 		$respuesta = ModeloProfesores::mdlEliminarProfesor($tabla, $datos);
 

@@ -49,7 +49,7 @@ class ModeloProfesores{
 
 	static public function mdlCrearProfesor($tabla, $datos){
 
-		// Preparar la consulta SQL para insertar un nuevo usuario
+		// Preparar la consulta SQL para insertar un nuevo profesor
 
 		$stmt = Conexion::conectar()->prepare("INSERT INTO 		$tabla	(name,
 																		ci_code) 
