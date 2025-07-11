@@ -1,5 +1,7 @@
 <?php
 
+require_once "config/autenticacion.php"; // Importar la clase de autenticación
+
 class ControladorUsuarios
 {
 
@@ -7,34 +9,45 @@ class ControladorUsuarios
 	INGRESO DE USUARIO
 	=============================================*/
 
-	static public function ctrIniciarSesion($datos)
+	static public function ctrIniciarSesion()
 	{
 
-		if (isset($datos["username"]) && isset($datos["password"])) {
+		if (isset($_POST["username"]) && isset($_POST["password"])) {
 
 			// Validar que el campo de usuario no contenga caracteres especiales
-			if (preg_match('/^[a-zA-Z0-9]+$/', $datos["username"])) {
+			if (preg_match('/^[a-zA-Z0-9]+$/', $_POST["username"])) {
 
 				$tabla = "users"; //tabla de usuarios en DB
 				
 				$item = "username"; //columna de la tabla
-				$valor = $datos["username"]; //valor del usuario a buscar
+				$valor = $_POST["username"]; //valor del usuario a buscar
 				
-				$encriptar = crypt($datos["password"], '$2a$07$asxx54ahjppf45sd87a5a4dDDGsystemdev$'); //encriptar la contraseña
+				$encriptar = crypt($_POST["password"], '$2a$07$asxx54ahjppf45sd87a5a4dDDGsystemdev$'); //encriptar la contraseña
 
 				$respuesta = ModeloUsuarios::MdlMostrarUsuarios($tabla, $item, $valor); // llamar al modelo para obtener el usuario
 				
 				// Verificar si la respuesta es un array y si el usuario y contraseña coinciden
-				if (is_array($respuesta) && $respuesta["username"] == $datos["username"] && $respuesta["password"] == $encriptar) {
+				if (is_array($respuesta) && $respuesta["username"] == $_POST["username"] && $respuesta["password"] == $encriptar) {
 
-					// session_start();
+					if($respuesta["status"] !== 1) {
+						http_response_code(401);
+						return json_encode([
+							"status" => 401,
+							"success" => false,
+							"mensaje" => "Este usuario no se encuentra activo. Comunicarse con un administrador"
+						]);
+						exit;
+					}
 
+					$token = Autenticacion::generarToken($respuesta["user_id"]); // Generar un token de autenticación
+					
 					$_SESSION["logged"] = "ok"; // Variable de sesión para indicar que el usuario ha iniciado sesión
 					$_SESSION["user_id"] = $respuesta["user_id"]; // ID del usuario
 					$_SESSION["nombres"] = $respuesta["first_name"]; // Nombre del usuario
 					$_SESSION["apellidos"] = $respuesta["last_name"]; // Apellido del usuario
 					$_SESSION["username"] = $respuesta["username"]; // Nombre de usuario
 					$_SESSION["ci"] = $respuesta["ci"]; // Cédula de identidad del usuario
+					$_SESSION["token"] = $token; // Token de autenticación
 					
 					/*=============================================
 					REGISTRAR FECHA PARA SABER EL ÚLTIMO LOGIN
@@ -42,10 +55,7 @@ class ControladorUsuarios
 
 					date_default_timezone_set('America/Caracas');
 
-					$fecha = date('Y-m-d');
-					$hora = date('H:i:s');
-
-					$fechaActual = $fecha . ' ' . $hora;
+					$fechaActual = date('Y-m-d H:i:s');
 
 					$item1 = "last_login";
 					$valor1 = $fechaActual;
@@ -53,51 +63,54 @@ class ControladorUsuarios
 					$item2 = "user_id";
 					$valor2 = $respuesta["user_id"];
 
+					// Actualizar el último login del usuario en la base de datos
 					$ultimoLogin = ModeloUsuarios::mdlActualizarUsuario($tabla, $item1, $valor1, $item2, $valor2);
 
 					if ($ultimoLogin == "ok") { 
-						
-						return 'ok'; // Retornar 'ok' si el último login se actualizó correctamente
+					
+						// Iniciar sesión y guardar los datos del usuario en la sesión
+						http_response_code(201);
+						return json_encode([
+							"status" => 201,
+							"success" => true,
+							"data" => [
+								"logged:" => $_SESSION["logged"],
+								"id:" => $_SESSION["user_id"],
+								"nombres:" => $_SESSION["nombres"],
+								"apellidos:" => $_SESSION["apellidos"],
+								"usuario:" => $_SESSION["username"],
+								"cedula" => $_SESSION["ci"],
+								"token" => $_SESSION["token"],
+							],
+							"mensaje" => "Inicio de sesion exitoso"
+						]); 
 					} else {
-						return 'error'; // Retornar 'error' si no se pudo actualizar el último login
+
+						// Si la respuesta no es "ok", significa que hubo un error al iniciar sesión
+						http_response_code(500);
+						return json_encode([
+							"status" => 500,
+							"success" => false,
+							"Error" => "Usuario o contraseña incorrectos.",
+							"mensaje" => "Ha ocurrido un problema al iniciar sesion, Contacte con un Administrador"
+						]);
 					}
 					
 				} else {
+					
+					session_abort(); // Terminar la sesión actual
 
+					// Si las credenciales son incorrectas, limpiar las variables de sesión
 					$_SESSION["logged"] = null;
 					$_SESSION["user_id"] = null;
 					$_SESSION["nombres"] = null;
 					$_SESSION["apellidos"] = null;
 					$_SESSION["username"] = null;
 					$_SESSION["ci"] = null;
+					$_SESSION["token"] = null;
 					
 					return 'error'; // Retornar 'error' si las credenciales son incorrectas
-					
-					session_abort();
 				}
-			}
-		}
-	}
-
-	/*=============================================
-	REGISTRO DE USUARIO
-	=============================================*/
-
-	static public function ctrCrearUsuario($datos)
-	{
-
-		if (isset($datos)) {
-
-			$tabla = "users"; // Tabla de usuarios en la base de datos
-			
-			$respuesta = ModeloUsuarios::mdlIngresarUsuario($tabla, $datos);
-
-			if ($respuesta == "ok") {
-				return "ok"; // Retornar 'ok' si el usuario fue creado exitosamente
-
-			} else {
-				return "error";	// Si hubo un error al crear el usuario, mostrar un mensaje de error
-
 			}
 		}
 	}
@@ -109,11 +122,66 @@ class ControladorUsuarios
 	static public function ctrMostrarUsuarios($item, $valor)
 	{
 
-		$tabla = "usuarios";
+		$tabla = "users"; // Definimos la tabla de la DB
 
 		$respuesta = ModeloUsuarios::MdlMostrarUsuarios($tabla, $item, $valor);
 
 		return $respuesta;
+	}
+
+	/*=============================================
+	REGISTRAR USUARIO
+	=============================================*/
+
+	static public function ctrCrearUsuario()
+	{
+
+		if (isset($_POST["nuevoUsername"])) {
+
+			$tabla = "users"; // Tabla de usuarios en la base de datos
+			
+			$encriptar = crypt($_POST["nuevoPassword"], '$2a$07$asxx54ahjppf45sd87a5a4dDDGsystemdev$'); // Encriptar la contraseña
+
+			// Crear un array con los datos del nuevo usuario
+			$datos = array(
+			"first_name" => trim($_POST["nuevoNombres"]),
+			"last_name" => trim($_POST["nuevoApellidos"]),
+			"ci" => trim($_POST["nuevoCI"]),
+			"username" => strtolower(trim($_POST["nuevoUsername"])),
+			"password" => $encriptar
+			);
+
+			$respuesta = ModeloUsuarios::mdlIngresarUsuario($tabla, $datos);
+
+			// Verificar la respuesta del controlador
+			if ($respuesta == "ok") {
+
+				// Si es correcta mostrará los datos del usuario recien registrado
+				http_response_code(201);
+				return json_encode([
+					"status" => 201,
+					"success" => true,
+					"data" => [
+					"nombres" => $datos["first_name"],
+					"apellidos" => $datos["last_name"],
+					"cedula" => $datos["ci"],
+					"usuario" => $datos["username"]
+					],
+					"mensaje" => "usuario creado correctamente"
+				]);
+			} else {
+
+				// Si algo falla retornará un status 500
+				http_response_code(500);
+				return json_encode([
+					"status" => 500,
+					"success" => false,
+					"data" => null,
+					"mensaje" => "error al crear el usuario"
+				]);
+			}
+
+		}
 	}
 
 	/*=============================================
@@ -123,69 +191,112 @@ class ControladorUsuarios
 	static public function ctrEditarUsuario()
 	{
 
-		if (isset($_POST["editarUsuario"])) {
+		$tabla = "users";
 
-			$tabla = "usuarios";
+		date_default_timezone_set('America/Caracas');
 
-			if ($_POST["editarPassword"] != "") {
-
-				$encriptar = crypt($_POST["editarPassword"], '$2a$07$asxx54ahjppf45sd87a5a4dDDGsystemdev$');
-			} else {
-
-				
-				$encriptar = $_POST["passwordActual"];
-			}
-
-			$datos = array(
-				"id" => $_POST["idUsuario"],
-				"nombres" => $_POST["editarNombres"],
-				"usuario" => strtolower($_POST["editarUsuario"]),
-				"email" => strtolower($_POST["editarEmail"]),
-				"password" => $encriptar
-			);
-
-			$respuesta = ModeloUsuarios::mdlEditarUsuario($tabla, $datos);
-
-			if ($respuesta == "ok") {
-
-				echo '<script>
-
-					Swal.fire({
-						icon: "success",
-						title: "usuario editado con éxito!",
-						timer: 1500,
-						timerProgressBar: true,
-						didOpen: () => {
-							Swal.showLoading();
-						}
-					}).then((result) => {
-						if (result.dismiss === Swal.DismissReason.timer) {
-							window.location = "usuarios";
-						}
-					});
-
-					</script>';
-			} else {
-
-				echo '<script>
-
-					Swal.fire({
-						icon: "error",
-						title: "¡Error al Editar el usuario!",
-						timer: 2000,
-						timerProgressBar: true,
-						didOpen: () => {
-							Swal.showLoading();
-						}
-					}).then((result) => {
-						if (result.dismiss === Swal.DismissReason.timer) {
-							window.location = "usuarios";
-						}
-					});
-
-				</script>';
-			}
+		$fechaActualizacion = date('Y-m-d H:i:s');
+		
+		// Se evita que se edite el usuario con ID 1 (el master)
+		if($_POST["editarIdUsuario"] == 1) {
+			http_response_code(403);
+			return json_encode([
+				"status" => 403,
+				"success" => false,
+				"mensaje" => "No se puede editar el usuario con ID 1"
+			]);
 		}
+
+		// Crear un array con los datos del usuario a editar
+		$datos = array(
+		"user_id" => $_POST["editarIdUsuario"],
+		"first_name" => trim($_POST["editarNombres"]),
+		"last_name" => trim($_POST["editarApellidos"]),
+		"ci" => trim($_POST["editarCI"]),
+		"updated_at" => $fechaActualizacion
+		);
+
+		$respuesta = ModeloUsuarios::mdlEditarUsuario($tabla, $datos);
+
+		//Recibimos la respuesta
+		if ($respuesta == "ok") {
+		http_response_code(201);
+		return json_encode([
+			"status" => 201,
+			"success" => true,
+			"data" => [
+			"id" => $datos["user_id"],
+			"nombres" => $datos["first_name"],
+			"apellidos" => $datos["last_name"],
+			"ci" => $datos["ci"],
+			"fecha_actualizacion" => $datos["updated_at"]
+			],
+			"mensaje" => "Usuario actualizado"
+		]);
+		} else {
+		
+		http_response_code(500);
+		return json_encode([
+			"status" => 500,
+			"success" => false,
+			"Error" => "No se pudo actualizar el usuario"
+		]);
+		}
+	}
+
+	/*=============================================
+	ACTUALIZAR USUARIO
+	=============================================*/
+
+	static public function ctrActualizarStatusUsuario(){
+
+		// si el valor no está definido o no es 1 o 0, retornar un error
+		if (!isset($_POST["actualizarStatus"]) || ($_POST["actualizarStatus"] != "1" && $_POST["actualizarStatus"] != "0")) {
+			return json_encode([
+				"error" => "El valor enviado debe ser 1 o 0"
+			]);
+			exit;
+		}
+		
+		// Se evita que se edite el usuario con ID 1 (el master)
+		if($_POST["actualizarIdUsuario"] == 1) {
+			http_response_code(403);
+			return json_encode([
+				"status" => 403,
+				"success" => false,
+				"mensaje" => "No se puede modificar el status del usuario con ID 1"
+			]);
+		}
+
+		$tabla = "users";
+
+		// Recibir un valor binario (0 - 1)
+		$item1 = "status";
+		$valor1 = $_POST["actualizarStatus"];
+
+		// Recibir el id del usuario a actualizar
+		$item2 = "user_id";
+		$valor2 = $_POST["actualizarIdUsuario"];
+
+		// Actualizar el último login del usuario en la base de datos
+		$respuesta = ModeloUsuarios::mdlActualizarUsuario($tabla, $item1, $valor1, $item2, $valor2);
+
+		if ($respuesta == "ok") { 
+		
+			// Mensaje de exito si la respuesta es "ok"
+			http_response_code(201);
+			return json_encode([
+				"status" => 201,
+				"success" => true,
+				"mensaje" => "Status actualizado correctamente"
+			]); 
+		} else {
+
+			// Si la respuesta no es "ok", significa que hubo un error al Actualizar el status
+			http_response_code(500);
+			return json_encode(["Error" => "Ha ocurrido un problema al actualizar el status"]);
+		}
+		
 	}
 
 	/*=============================================
@@ -194,14 +305,39 @@ class ControladorUsuarios
 
 	static public function ctrEliminarUsuario(){
 
-		if(isset($_POST["idEliminarUsuario"])){
+		// Se evita que se elimine el usuario con ID 1 (el master)
+		if($_POST["EliminarIdUsuario"] == 1) {
+			http_response_code(403);
+			return json_encode([
+				"status" => 403,
+				"success" => false,
+				"mensaje" => "No se puede eliminar el usuario con ID 1"
+			]);
+		}
 
-			$tabla ="usuarios";
-			$datos = $_POST["idEliminarUsuario"];
+		$tabla ="users";
 
-			$respuesta = ModeloUsuarios::mdlEliminarUsuario($tabla, $datos);
+		$datos = $_POST["EliminarIdUsuario"]; // Recibir el id del usuario a eliminar
 
-			return $respuesta;
+		$respuesta = ModeloUsuarios::mdlEliminarUsuario($tabla, $datos);
+
+		if ($respuesta == "ok") {
+
+			http_response_code(200);
+			return json_encode([
+				"status" => 200,
+				"success" => true,
+				"mensaje" => "Usuario eliminado con exito"
+			]);
+		} else {
+
+			http_response_code(500);
+			return json_encode([
+				"status" => 500,
+				"success" => false,
+				"error" => "Usuario NO eliminado",
+				"mensaje" => "Ha ocurrido un problema al intentar eliminar este usuario, Contacte con un Administrador"
+			]);
 		}
 
 	}

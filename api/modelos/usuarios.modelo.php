@@ -14,23 +14,26 @@ class ModeloUsuarios{
 
 		if($item != null){
 
+			// Preparar la consulta SQL para obtener un usuario específico
+
 			$stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :$item");
 
 			$stmt -> bindParam(":".$item, $valor, PDO::PARAM_STR);
 
 			$stmt -> execute();
 
-			return $stmt -> fetch();
+			return $stmt -> fetch(); // Retorna un solo usuario si se encuentra
 
 		}else{
 
 			// GET todos los usuarios
+			// Preparar la consulta SQL para obtener todos los usuarios
 
 			$stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
 
 			$stmt -> execute();
 
-			return $stmt -> fetchAll();
+			return $stmt -> fetchAll(); // Retorna todos los usuarios si no se especifica un item
 
 		}
 
@@ -46,6 +49,8 @@ class ModeloUsuarios{
 
 	static public function mdlIngresarUsuario($tabla, $datos){
 
+		// Preparar la consulta SQL para insertar un nuevo usuario
+
 		$stmt = Conexion::conectar()->prepare("INSERT INTO 		$tabla	(first_name,
 																		last_name,
 																		ci,
@@ -57,22 +62,24 @@ class ModeloUsuarios{
 																		:username,
 																		:password)");
 
-		$stmt->bindParam(":first_name", $datos["first_name"], PDO::PARAM_STR);
-		$stmt->bindParam(":last_name", $datos["last_name"], PDO::PARAM_STR);
-		$stmt->bindParam(":ci", $datos["ci"], PDO::PARAM_STR);
-		$stmt->bindParam(":username", $datos["username"], PDO::PARAM_STR);
-		$stmt->bindParam(":password", $datos["password"], PDO::PARAM_STR);
+		$stmt->bindParam(":first_name", $datos["first_name"], PDO::PARAM_STR); // Vincular el parámetro first_name
+		$stmt->bindParam(":last_name", $datos["last_name"], PDO::PARAM_STR); // Vincular el parámetro last_name
+		$stmt->bindParam(":ci", $datos["ci"], PDO::PARAM_STR); // Vincular el parámetro ci
+		$stmt->bindParam(":username", $datos["username"], PDO::PARAM_STR); // Vincular el parámetro username
+		$stmt->bindParam(":password", $datos["password"], PDO::PARAM_STR); // Vincular el parámetro password
 
+		// Ejecutar la consulta SQL
 		if($stmt->execute()){
 
-			return "ok";	
+			return "ok"; // Retornar 'ok' si la inserción fue exitosa
 
 		}else{
 
-			return "error";
+			return "error"; // Retornar 'error' si hubo un problema al insertar el usuario
 		
 		}
 
+		// Cerrar la conexión y liberar recursos
 		$stmt->close();
 		
 		$stmt = null;
@@ -88,16 +95,14 @@ class ModeloUsuarios{
 		$stmt = Conexion::conectar()->prepare("UPDATE $tabla 	SET 	first_name 	= :first_name,
 																		last_name 	= :last_name, 
 																		ci 			= :ci,
-																		username 	= :username, 
-																		password 	= :password
+																		updated_at	= :updated_at
 																WHERE 	user_id 	= :user_id");
 
 		$stmt->bindParam(":user_id", $datos["user_id"], PDO::PARAM_INT);
 		$stmt->bindParam(":first_name", $datos["first_name"], PDO::PARAM_STR);
 		$stmt->bindParam(":last_name", $datos["last_name"], PDO::PARAM_STR);
 		$stmt->bindParam(":ci", $datos["ci"], PDO::PARAM_STR);
-		$stmt->bindParam(":username", $datos["username"], PDO::PARAM_STR);
-		$stmt->bindParam(":password", $datos["password"], PDO::PARAM_STR);
+		$stmt->bindParam(":updated_at", $datos["updated_at"], PDO::PARAM_STR);
 
 		if($stmt -> execute()){
 
