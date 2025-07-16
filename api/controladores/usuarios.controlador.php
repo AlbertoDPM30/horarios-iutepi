@@ -12,6 +12,8 @@ class ControladorUsuarios
 	static public function ctrIniciarSesion()
 	{
 
+		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+
 		if (isset($_POST["username"]) && isset($_POST["password"])) {
 
 			// Validar que el campo de usuario no contenga caracteres especiales
@@ -35,7 +37,7 @@ class ControladorUsuarios
 							"status" => 401,
 							"success" => false,
 							"mensaje" => "Este usuario no se encuentra activo. Comunicarse con un administrador"
-						]);
+						], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 						exit;
 					}
 
@@ -83,7 +85,7 @@ class ControladorUsuarios
 								"token" => $_SESSION["token"],
 							],
 							"mensaje" => "Inicio de sesion exitoso"
-						]); 
+						], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); 
 					} else {
 
 						// Si la respuesta no es "ok", significa que hubo un error al iniciar sesión
@@ -93,9 +95,9 @@ class ControladorUsuarios
 							"success" => false,
 							"Error" => "Usuario o contraseña incorrectos.",
 							"mensaje" => "Ha ocurrido un problema al iniciar sesion, Contacte con un Administrador"
-						]);
+						], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 					}
-					
+
 				} else {
 					
 					session_abort(); // Terminar la sesión actual
@@ -136,6 +138,8 @@ class ControladorUsuarios
 	static public function ctrCrearUsuario()
 	{
 
+		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+
 		if (isset($_POST["nuevoUsername"])) {
 
 			$tabla = "users"; // Tabla de usuarios en la base de datos
@@ -144,11 +148,11 @@ class ControladorUsuarios
 
 			// Crear un array con los datos del nuevo usuario
 			$datos = array(
-			"first_name" => trim($_POST["nuevoNombres"]),
-			"last_name" => trim($_POST["nuevoApellidos"]),
-			"ci" => trim($_POST["nuevoCI"]),
-			"username" => strtolower(trim($_POST["nuevoUsername"])),
-			"password" => $encriptar
+				"first_name" => trim($_POST["nuevoNombres"]),
+				"last_name" => trim($_POST["nuevoApellidos"]),
+				"ci" => trim($_POST["nuevoCI"]),
+				"username" => strtolower(trim($_POST["nuevoUsername"])),
+				"password" => $encriptar
 			);
 
 			$respuesta = ModeloUsuarios::mdlIngresarUsuario($tabla, $datos);
@@ -168,7 +172,7 @@ class ControladorUsuarios
 					"usuario" => $datos["username"]
 					],
 					"mensaje" => "usuario creado correctamente"
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			} else {
 
 				// Si algo falla retornará un status 500
@@ -178,10 +182,11 @@ class ControladorUsuarios
 					"success" => false,
 					"data" => null,
 					"mensaje" => "error al crear el usuario"
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			}
 
 		}
+
 	}
 
 	/*=============================================
@@ -190,6 +195,8 @@ class ControladorUsuarios
 
 	static public function ctrEditarUsuario()
 	{
+
+		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
 
 		$tabla = "users";
 
@@ -209,39 +216,41 @@ class ControladorUsuarios
 
 		// Crear un array con los datos del usuario a editar
 		$datos = array(
-		"user_id" => $_POST["editarIdUsuario"],
-		"first_name" => trim($_POST["editarNombres"]),
-		"last_name" => trim($_POST["editarApellidos"]),
-		"ci" => trim($_POST["editarCI"]),
-		"updated_at" => $fechaActualizacion
+			"user_id" => $_POST["editarIdUsuario"],
+			"first_name" => trim($_POST["editarNombres"]),
+			"last_name" => trim($_POST["editarApellidos"]),
+			"ci" => trim($_POST["editarCI"]),
+			"updated_at" => $fechaActualizacion
 		);
 
 		$respuesta = ModeloUsuarios::mdlEditarUsuario($tabla, $datos);
 
 		//Recibimos la respuesta
 		if ($respuesta == "ok") {
-		http_response_code(201);
-		return json_encode([
-			"status" => 201,
-			"success" => true,
-			"data" => [
-			"id" => $datos["user_id"],
-			"nombres" => $datos["first_name"],
-			"apellidos" => $datos["last_name"],
-			"ci" => $datos["ci"],
-			"fecha_actualizacion" => $datos["updated_at"]
-			],
-			"mensaje" => "Usuario actualizado"
-		]);
+
+			http_response_code(201);
+			return json_encode([
+				"status" => 201,
+				"success" => true,
+				"data" => [
+				"id" => $datos["user_id"],
+				"nombres" => $datos["first_name"],
+				"apellidos" => $datos["last_name"],
+				"ci" => $datos["ci"],
+				"fecha_actualizacion" => $datos["updated_at"]
+				],
+				"mensaje" => "Usuario actualizado"
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 		
-		http_response_code(500);
-		return json_encode([
-			"status" => 500,
-			"success" => false,
-			"Error" => "No se pudo actualizar el usuario"
-		]);
+			http_response_code(500);
+			return json_encode([
+				"status" => 500,
+				"success" => false,
+				"Error" => "No se pudo actualizar el usuario"
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
+
 	}
 
 	/*=============================================
@@ -254,7 +263,7 @@ class ControladorUsuarios
 		if (!isset($_POST["actualizarStatus"]) || ($_POST["actualizarStatus"] != "1" && $_POST["actualizarStatus"] != "0")) {
 			return json_encode([
 				"error" => "El valor enviado debe ser 1 o 0"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			exit;
 		}
 		
@@ -265,7 +274,7 @@ class ControladorUsuarios
 				"status" => 403,
 				"success" => false,
 				"mensaje" => "No se puede modificar el status del usuario con ID 1"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
 		$tabla = "users";
@@ -289,14 +298,14 @@ class ControladorUsuarios
 				"status" => 201,
 				"success" => true,
 				"mensaje" => "Status actualizado correctamente"
-			]); 
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); 
 		} else {
 
 			// Si la respuesta no es "ok", significa que hubo un error al Actualizar el status
 			http_response_code(500);
 			return json_encode(["Error" => "Ha ocurrido un problema al actualizar el status"]);
 		}
-		
+
 	}
 
 	/*=============================================
@@ -312,7 +321,7 @@ class ControladorUsuarios
 				"status" => 403,
 				"success" => false,
 				"mensaje" => "No se puede eliminar el usuario con ID 1"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
 		$tabla ="users";
@@ -328,7 +337,7 @@ class ControladorUsuarios
 				"status" => 200,
 				"success" => true,
 				"mensaje" => "Usuario eliminado con exito"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 
 			http_response_code(500);
@@ -337,7 +346,7 @@ class ControladorUsuarios
 				"success" => false,
 				"error" => "Usuario NO eliminado",
 				"mensaje" => "Ha ocurrido un problema al intentar eliminar este usuario, Contacte con un Administrador"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
 	}

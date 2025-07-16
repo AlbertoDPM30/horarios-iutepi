@@ -7,6 +7,8 @@ if(isset($_SESSION["logged"]) == "ok") {
   =============================================*/
   if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdProfesor'])) {
 
+    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+
     // Si se quiere obtener un solo profesor se le da valor a los parametros
     $item = "teacher_id"; // Columna de la DB
     $valor = $_POST['obtenerIdProfesor']; // ID del profesor que se quiere obtener
@@ -14,9 +16,11 @@ if(isset($_SESSION["logged"]) == "ok") {
     // Enviar los datos al controlador para obtener el profesor
     $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
 
-    echo json_encode($respuesta); // Enviamos la respuesta al cliente
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
 
   } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdProfesor'])) {
+
+    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
 
     $item = null;
     $valor = null;
@@ -24,9 +28,11 @@ if(isset($_SESSION["logged"]) == "ok") {
     // Enviar los datos al controlador para obtener los profesores
     $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
 
-    echo json_encode($respuesta); // Enviamos la respuesta al cliente
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
 
   } else {
+
+    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
 
     json_encode([
       "status" => 401,
@@ -47,6 +53,24 @@ if(isset($_SESSION["logged"]) == "ok") {
       exit;
     }
     
+    $item = "name";
+    $valor = $_POST["nuevoNombreProfesor"];
+
+    // Enviar los datos al controlador para obtener los profesores
+    $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
+    
+    if ($respuesta) {
+
+      // Si ya existe una materia con ese nombre, retornará un error
+      http_response_code(400);
+      echo json_encode([
+        "status" => 400,
+        "success" => false,
+        "aviso" => "Este Profesor ya se encuentra registrado"
+      ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+      exit;
+    }
+
     // Mostramos los datos desde el controlador del profesor creado
     echo ControladorProfesores::ctrCrearProfesor();
 
