@@ -53,6 +53,24 @@ if(isset($_SESSION["logged"]) == "ok") {
       exit;
     }
     
+    $item = "name";
+    $valor = $_POST["nuevoNombreProfesor"];
+
+    // Enviar los datos al controlador para obtener los profesores
+    $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
+    
+    if ($respuesta) {
+
+      // Si ya existe una materia con ese nombre, retornará un error
+      http_response_code(400);
+      echo json_encode([
+        "status" => 400,
+        "success" => false,
+        "aviso" => "Este Profesor ya se encuentra registrado"
+      ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+      exit;
+    }
+
     // Mostramos los datos desde el controlador del profesor creado
     echo ControladorProfesores::ctrCrearProfesor();
 

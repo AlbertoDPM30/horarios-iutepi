@@ -45,12 +45,30 @@ if(isset($_SESSION["logged"]) == "ok") {
   if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["nuevaMateria"])) {
 
     // Validar que los campos no estén vacíos
-    if (empty($_POST["nuevaMateria"])) {
+    if (empty($_POST["nuevaMateria"] || empty($_POST["nuevaHorasDuracion"]) || empty($_POST["nuevoSemestre"]))) {
 
       echo json_encode(["mensaje" => "Todos los campos son obligatorios."]);
       exit;
     }
     
+    $item = "name";
+    $valor = $_POST["nuevaMateria"];
+
+    // Enviar los datos al controlador para obtener las materias
+    $respuesta = ControladorMaterias::ctrMostrarMaterias($item, $valor);
+
+    if ($respuesta) {
+
+      // Si ya existe una materia con ese nombre, retornará un error
+      http_response_code(400);
+      echo json_encode([
+        "status" => 400,
+        "success" => false,
+        "aviso" => "Esta Materia ya se encuentra registrada"
+      ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+      exit;
+    }
+
     // Mostramos los datos desde el controlador de la materia creada
     echo ControladorMaterias::ctrCrearMateria();
 
