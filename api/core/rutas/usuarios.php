@@ -7,6 +7,8 @@ if(isset($_SESSION["logged"]) == "ok") {
   =============================================*/
   if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdUsuario'])) {
 
+    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+
     // Si se quiere obtener un solo usuario se le da valor a los parametros
     $item = "user_id"; // Columna de la DB
     $valor = $_POST['obtenerIdUsuario']; // ID del usuario que se quiere obtener
@@ -14,9 +16,11 @@ if(isset($_SESSION["logged"]) == "ok") {
     // Enviar los datos al controlador para obtener el usuario
     $respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
 
-    echo json_encode($respuesta); // Enviamos la respuesta al cliente
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
 
   } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdUsuario'])) {
+
+    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
 
     $item = null;
     $valor = null;
@@ -24,9 +28,11 @@ if(isset($_SESSION["logged"]) == "ok") {
     // Enviar los datos al controlador para obtener los usuarios
     $respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
 
-    echo json_encode($respuesta); // Enviamos la respuesta al cliente
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
 
   } else {
+
+    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
 
     json_encode([
       "status" => 401,

@@ -16,6 +16,9 @@ session_start();
       // HABILIDADES
       $_GET["ruta"] == "habilidades"  ||                  
       
+      // MATERIAS
+      $_GET["ruta"] == "materias"     ||                  
+      
       // USUARIOS               
       $_GET["ruta"] == "login"        ||                  
       $_GET["ruta"] == "logout"       ||                  
@@ -34,7 +37,7 @@ session_start();
   } else {
 
     echo json_encode([
-      "status" => "400",
+      "status" => "404",
       "mensaje" => "Ruta no especificada.",
       "descripcion" => "Por favor, especifique una ruta válida."
     ]);

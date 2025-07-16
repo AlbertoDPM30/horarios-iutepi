@@ -1,4 +1,5 @@
 <?php
+
 // Protegemos la ruta
 if(isset($_SESSION["logged"]) == "ok") {
 
@@ -7,6 +8,8 @@ if(isset($_SESSION["logged"]) == "ok") {
   =============================================*/
   if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdHabilidad'])) {
 
+    header('Content-Type: application/json; charset=utf-8');
+
     // Si se quiere obtener una sola habilidad se le da valor a los parametros
     $item = "skill_id"; // Columna de la DB
     $valor = $_POST['obtenerIdHabilidad']; // ID de la habilidad que se quiere obtener
@@ -14,7 +17,7 @@ if(isset($_SESSION["logged"]) == "ok") {
     // Enviar los datos al controlador para obtener la hablidad
     $respuesta = ControladorHabilidades::ctrMostrarHabilidades($item, $valor);
 
-    echo json_encode($respuesta); // Enviamos la respuesta al cliente
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
 
   } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdHabilidad'])) {
 
@@ -24,7 +27,7 @@ if(isset($_SESSION["logged"]) == "ok") {
     // Enviar los datos al controlador para obtener las habilidades
     $respuesta = ControladorHabilidades::ctrMostrarHabilidades($item, $valor);
 
-    echo json_encode($respuesta); // Enviamos la respuesta al cliente
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
 
   } else {
 
@@ -47,6 +50,23 @@ if(isset($_SESSION["logged"]) == "ok") {
       exit;
     }
     
+    $item = "name";
+    $valor = $_POST["nuevoNombreHabilidad"];
+
+    // Enviar los datos al controlador para obtener las habilidades
+    $respuesta = ControladorHabilidades::ctrMostrarHabilidades($item, $valor);
+
+    if ($respuesta) {
+      // Si la habilidad ya existe, se retorna un mensaje
+      http_response_code(400);
+      echo json_encode([
+        "status" => 00,
+        "success" => false,
+        "aviso" => "Esta Habilidad ya se encuentra registrada"
+      ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+      exit;
+    }
+
     // Mostramos los datos desde el controlador de la habilidad creada
     echo ControladorHabilidades::ctrCrearHabilidad();
 

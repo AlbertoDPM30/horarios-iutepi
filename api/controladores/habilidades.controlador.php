@@ -1,7 +1,5 @@
 <?php
 
-// require_once "config/autenticacion.php"; // Importar la clase de autenticación
-
 class ControladorHabilidades
 {
 
@@ -28,6 +26,8 @@ class ControladorHabilidades
 
 		if (isset($_POST["nuevoNombreHabilidad"])) {
 
+			header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+
 			$tabla = "skills"; // Tabla de habilidades en la base de datos
 
 			// Crear un array con los datos del nueva habilidad
@@ -47,7 +47,7 @@ class ControladorHabilidades
 						"habilidad" => $datos["skill_name"]
 					],
 					"mensaje" => "habilidad creada correctamente"
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			} else {
 
 				// Si algo falla retornará un status 500
@@ -57,7 +57,7 @@ class ControladorHabilidades
 					"success" => false,
 					"data" => null,
 					"mensaje" => "error al crear la nueva habilidad",
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			}
 
 		}
@@ -99,18 +99,19 @@ class ControladorHabilidades
 					"fecha_actualizacion" => $datos["updated_at"]
 				],
 				"mensaje" => "Habilidad actualizada correctamente"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 		
-		// Si algo falla retornará un status 500 y un mensaje de error
-		http_response_code(500);
-		return json_encode([
-			"status" => 500,
-			"success" => false,
-			"Error" => "No se pudo actualizar la habilidad",
-			"mensaje" => "Ha ocurrido un problema al intentar actualizar esta habilidad, Contacte con un Administrador"
-		]);
+			// Si algo falla retornará un status 500 y un mensaje de error
+			http_response_code(500);
+			return json_encode([
+				"status" => 500,
+				"success" => false,
+				"Error" => "No se pudo actualizar la habilidad",
+				"mensaje" => "Ha ocurrido un problema al intentar actualizar esta habilidad, Contacte con un Administrador"
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
+	
 	}
 
 	/*=============================================
@@ -134,7 +135,7 @@ class ControladorHabilidades
 				"status" => 200,
 				"success" => true,
 				"mensaje" => "Habilidad eliminada con exito"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 
 			// Si la respuesta es incorrecta, retornamos un status 500 y un mensaje de error
@@ -144,7 +145,7 @@ class ControladorHabilidades
 				"success" => false,
 				"error" => "Habilidad NO eliminada",
 				"mensaje" => "Ha ocurrido un problema al intentar eliminar esta Habilidad, Contacte con un Administrador"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
 	}
