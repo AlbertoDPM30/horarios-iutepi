@@ -45,7 +45,7 @@ class ControladorMaterias
 
 				// Si es correcta mostrará los datos recién registrados
 				http_response_code(201);
-				$dataRespuesta = json_encode([
+				return json_encode([
 					"status" => 201,
 					"success" => true,
 					"data" => [
@@ -55,28 +55,19 @@ class ControladorMaterias
 						"asignado" => $datos["is_assigned"],
 					],
 					"mensaje" => "Materia creada correctamente"
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			} else {
 
 				// Si algo falla retornará un status 500
 				http_response_code(500);
-				$dataRespuesta = json_encode([
+				return json_encode([
 					"status" => 500,
 					"success" => false,
 					"data" => null,
 					"mensaje" => "error al crear la nueva materia",
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			}
 
-			$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-			if ($json === false) {
-				$jsonError = json_last_error_msg();
-				http_response_code(500); // Error interno del servidor
-				$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-			}
-
-			return $json; // Retornar el JSON generado
 
 		}
 	}
@@ -94,11 +85,11 @@ class ControladorMaterias
 
 		// Crear un array con los datos de la materia a editar
 		$datos = array(
-		"subject_id" => $_POST["editarIdMateria"],
-		"name" => trim($_POST["editarMateria"]),
-		"duration_hours" => trim($_POST["editarHorasDuracion"]),
-		"semester" => trim($_POST["editarSemestre"]),
-		"is_assigned" => trim($_POST["editarAsignado"])
+			"subject_id" => $_POST["editarIdMateria"],
+			"name" => trim($_POST["editarMateria"]),
+			"duration_hours" => trim($_POST["editarHorasDuracion"]),
+			"semester" => trim($_POST["editarSemestre"]),
+			"is_assigned" => trim($_POST["editarAsignado"])
 		);
 
 		$respuesta = ModeloMaterias::mdlEditarMateria($tabla, $datos);
@@ -108,7 +99,7 @@ class ControladorMaterias
 
 			// Retornamos la respuesta con los datos actualizados
 			http_response_code(201);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 201,
 				"success" => true,
 				"data" => [
@@ -119,29 +110,20 @@ class ControladorMaterias
 					"asignado" => $datos["is_assigned"]
 				],
 				"mensaje" => "Materia actualizada correctamente"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
 		} else {
 		
 			// Si algo falla retornará un status 500 y un mensaje de error
 			http_response_code(500);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 500,
 				"success" => false,
 				"Error" => "No se pudo actualizar la Materia",
 				"mensaje" => "Ha ocurrido un problema al intentar actualizar esta materia, Contacte con un Administrador"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
-		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		if ($json === false) {
-			$jsonError = json_last_error_msg();
-			http_response_code(500); // Error interno del servidor
-			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-		}
-
-		return $json; // Retornar el JSON generado
 
 	}
 
@@ -162,7 +144,7 @@ class ControladorMaterias
 
 			// Si la respuesta es correcta, retornamos un status 200 y un mensaje de éxito
 			http_response_code(200);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 200,
 				"success" => true,
 				"mensaje" => "Materia eliminada con exito"
@@ -171,24 +153,13 @@ class ControladorMaterias
 
 			// Si la respuesta es incorrecta, retornamos un status 500 y un mensaje de error
 			http_response_code(500);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 500,
 				"success" => false,
 				"error" => "Materia NO eliminada",
 				"mensaje" => "Ha ocurrido un problema al intentar eliminar esta Materia, Contacte con un Administrador"
 			]);
 		}
-
-		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		if ($json === false) {
-			$jsonError = json_last_error_msg();
-			http_response_code(500); // Error interno del servidor
-			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-		}
-
-		return $json; // Retornar el JSON generado
-
 
 	}
 

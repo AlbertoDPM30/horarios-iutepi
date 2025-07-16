@@ -43,7 +43,7 @@ class ControladorProfesores
 
 				// Si es correcta mostrará los datos del profesor recien registrado
 				http_response_code(201);
-				$dataRespuesta = json_encode([
+				return json_encode([
 					"status" => 201,
 					"success" => true,
 					"data" => [
@@ -51,28 +51,18 @@ class ControladorProfesores
 					"cedula_codigo" => $datos["ci_code"]
 					],
 					"mensaje" => "profesor creado correctamente"
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			} else {
 
 				// Si algo falla retornará un status 500
 				http_response_code(500);
-				$dataRespuesta = json_encode([
+				return json_encode([
 					"status" => 500,
 					"success" => false,
 					"data" => null,
 					"mensaje" => "error al crear el nuevo profesor"
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			}
-
-			$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-			if ($json === false) {
-				$jsonError = json_last_error_msg();
-				http_response_code(500); // Error interno del servidor
-				$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-			}
-
-			return $json; // Retornar el JSON generado
 
 		}
 	}
@@ -107,7 +97,7 @@ class ControladorProfesores
 
 			// Retornamos la respuesta con los datos del profesor actualizado
 			http_response_code(201);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 201,
 				"success" => true,
 				"data" => [
@@ -117,27 +107,18 @@ class ControladorProfesores
 				"fecha_actualizacion" => $datos["updated_at"]
 				],
 				"mensaje" => "Profesor actualizado correctamente"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 		
 			http_response_code(500);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 500,
 				"success" => false,
 				"Error" => "No se pudo actualizar el profesor",
 				"mensaje" => "Ha ocurrido un problema al intentar actualizar este profesor, Contacte con un Administrador"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
-		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		if ($json === false) {
-			$jsonError = json_last_error_msg();
-			http_response_code(500); // Error interno del servidor
-			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-		}
-
-		return $json; // Retornar el JSON generado
 	}
 
 	/*=============================================
@@ -159,32 +140,22 @@ class ControladorProfesores
 
 			// Si la respuesta es correcta, retornamos un status 200 y un mensaje de éxito
 			http_response_code(200);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 200,
 				"success" => true,
 				"mensaje" => "Profesor eliminado con exito"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 
 			// Si la respuesta es incorrecta, retornamos un status 500 y un mensaje de error
 			http_response_code(500);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 500,
 				"success" => false,
 				"error" => "Profesor NO eliminado",
 				"mensaje" => "Ha ocurrido un problema al intentar eliminar este Profesor, Contacte con un Administrador"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
-
-		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		if ($json === false) {
-			$jsonError = json_last_error_msg();
-			http_response_code(500); // Error interno del servidor
-			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-		}
-
-		return $json; // Retornar el JSON generado
 
 	}
 

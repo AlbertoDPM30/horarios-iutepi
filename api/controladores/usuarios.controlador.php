@@ -37,7 +37,7 @@ class ControladorUsuarios
 							"status" => 401,
 							"success" => false,
 							"mensaje" => "Este usuario no se encuentra activo. Comunicarse con un administrador"
-						]);
+						], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 						exit;
 					}
 
@@ -72,7 +72,7 @@ class ControladorUsuarios
 					
 						// Iniciar sesión y guardar los datos del usuario en la sesión
 						http_response_code(201);
-						$dataRespuesta = json_encode([
+						return json_encode([
 							"status" => 201,
 							"success" => true,
 							"data" => [
@@ -85,29 +85,19 @@ class ControladorUsuarios
 								"token" => $_SESSION["token"],
 							],
 							"mensaje" => "Inicio de sesion exitoso"
-						]); 
+						], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); 
 					} else {
 
 						// Si la respuesta no es "ok", significa que hubo un error al iniciar sesión
 						http_response_code(500);
-						$dataRespuesta = json_encode([
+						return json_encode([
 							"status" => 500,
 							"success" => false,
 							"Error" => "Usuario o contraseña incorrectos.",
 							"mensaje" => "Ha ocurrido un problema al iniciar sesion, Contacte con un Administrador"
-						]);
+						], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 					}
 
-					$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-					if ($json === false) {
-						$jsonError = json_last_error_msg();
-						http_response_code(500); // Error interno del servidor
-						$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-					}
-
-					return $json; // Retornar el JSON generado
-					
 				} else {
 					
 					session_abort(); // Terminar la sesión actual
@@ -158,11 +148,11 @@ class ControladorUsuarios
 
 			// Crear un array con los datos del nuevo usuario
 			$datos = array(
-			"first_name" => trim($_POST["nuevoNombres"]),
-			"last_name" => trim($_POST["nuevoApellidos"]),
-			"ci" => trim($_POST["nuevoCI"]),
-			"username" => strtolower(trim($_POST["nuevoUsername"])),
-			"password" => $encriptar
+				"first_name" => trim($_POST["nuevoNombres"]),
+				"last_name" => trim($_POST["nuevoApellidos"]),
+				"ci" => trim($_POST["nuevoCI"]),
+				"username" => strtolower(trim($_POST["nuevoUsername"])),
+				"password" => $encriptar
 			);
 
 			$respuesta = ModeloUsuarios::mdlIngresarUsuario($tabla, $datos);
@@ -172,7 +162,7 @@ class ControladorUsuarios
 
 				// Si es correcta mostrará los datos del usuario recien registrado
 				http_response_code(201);
-				$dataRespuesta = json_encode([
+				return json_encode([
 					"status" => 201,
 					"success" => true,
 					"data" => [
@@ -182,30 +172,21 @@ class ControladorUsuarios
 					"usuario" => $datos["username"]
 					],
 					"mensaje" => "usuario creado correctamente"
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			} else {
 
 				// Si algo falla retornará un status 500
 				http_response_code(500);
-				$dataRespuesta = json_encode([
+				return json_encode([
 					"status" => 500,
 					"success" => false,
 					"data" => null,
 					"mensaje" => "error al crear el usuario"
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			}
-
-			$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-			if ($json === false) {
-				$jsonError = json_last_error_msg();
-				http_response_code(500); // Error interno del servidor
-				$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-			}
-
-			return $json; // Retornar el JSON generado
 
 		}
+
 	}
 
 	/*=============================================
@@ -248,7 +229,7 @@ class ControladorUsuarios
 		if ($respuesta == "ok") {
 
 			http_response_code(201);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 201,
 				"success" => true,
 				"data" => [
@@ -259,26 +240,17 @@ class ControladorUsuarios
 				"fecha_actualizacion" => $datos["updated_at"]
 				],
 				"mensaje" => "Usuario actualizado"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 		
 			http_response_code(500);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 500,
 				"success" => false,
 				"Error" => "No se pudo actualizar el usuario"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
-		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		if ($json === false) {
-			$jsonError = json_last_error_msg();
-			http_response_code(500); // Error interno del servidor
-			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-		}
-
-		return $json; // Retornar el JSON generado
 	}
 
 	/*=============================================
@@ -291,7 +263,7 @@ class ControladorUsuarios
 		if (!isset($_POST["actualizarStatus"]) || ($_POST["actualizarStatus"] != "1" && $_POST["actualizarStatus"] != "0")) {
 			return json_encode([
 				"error" => "El valor enviado debe ser 1 o 0"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			exit;
 		}
 		
@@ -302,7 +274,7 @@ class ControladorUsuarios
 				"status" => 403,
 				"success" => false,
 				"mensaje" => "No se puede modificar el status del usuario con ID 1"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
 		$tabla = "users";
@@ -322,28 +294,18 @@ class ControladorUsuarios
 		
 			// Mensaje de exito si la respuesta es "ok"
 			http_response_code(201);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 201,
 				"success" => true,
 				"mensaje" => "Status actualizado correctamente"
-			]); 
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); 
 		} else {
 
 			// Si la respuesta no es "ok", significa que hubo un error al Actualizar el status
 			http_response_code(500);
-			$dataRespuesta = json_encode(["Error" => "Ha ocurrido un problema al actualizar el status"]);
+			return json_encode(["Error" => "Ha ocurrido un problema al actualizar el status"]);
 		}
 
-		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		if ($json === false) {
-			$jsonError = json_last_error_msg();
-			http_response_code(500); // Error interno del servidor
-			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-		}
-
-		return $json; // Retornar el JSON generado
-		
 	}
 
 	/*=============================================
@@ -359,7 +321,7 @@ class ControladorUsuarios
 				"status" => 403,
 				"success" => false,
 				"mensaje" => "No se puede eliminar el usuario con ID 1"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
 
 		$tabla ="users";
@@ -371,31 +333,21 @@ class ControladorUsuarios
 		if ($respuesta == "ok") {
 
 			http_response_code(200);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 200,
 				"success" => true,
 				"mensaje" => "Usuario eliminado con exito"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 
 			http_response_code(500);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 500,
 				"success" => false,
 				"error" => "Usuario NO eliminado",
 				"mensaje" => "Ha ocurrido un problema al intentar eliminar este usuario, Contacte con un Administrador"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
-
-		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		if ($json === false) {
-			$jsonError = json_last_error_msg();
-			http_response_code(500); // Error interno del servidor
-			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-		}
-
-		return $json; // Retornar el JSON generado
 
 	}
 

@@ -40,35 +40,25 @@ class ControladorHabilidades
 
 				// Si es correcta mostrará los datos recién registrados
 				http_response_code(201);
-				$dataRespuesta = json_encode([
+				return json_encode([
 					"status" => 201,
 					"success" => true,
 					"data" => [
 						"habilidad" => $datos["skill_name"]
 					],
 					"mensaje" => "habilidad creada correctamente"
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			} else {
 
 				// Si algo falla retornará un status 500
 				http_response_code(500);
-				$dataRespuesta = json_encode([
+				return json_encode([
 					"status" => 500,
 					"success" => false,
 					"data" => null,
 					"mensaje" => "error al crear la nueva habilidad",
-				]);
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 			}
-
-			$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-			if ($json === false) {
-				$jsonError = json_last_error_msg();
-				http_response_code(500); // Error interno del servidor
-				$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-			}
-
-			return $json; // Retornar el JSON generado
 
 		}
 	}
@@ -100,7 +90,7 @@ class ControladorHabilidades
 
 			// Retornamos la respuesta con los datos actualizado
 			http_response_code(201);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 201,
 				"success" => true,
 				"data" => [
@@ -109,28 +99,19 @@ class ControladorHabilidades
 					"fecha_actualizacion" => $datos["updated_at"]
 				],
 				"mensaje" => "Habilidad actualizada correctamente"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 		
 			// Si algo falla retornará un status 500 y un mensaje de error
 			http_response_code(500);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 500,
 				"success" => false,
 				"Error" => "No se pudo actualizar la habilidad",
 				"mensaje" => "Ha ocurrido un problema al intentar actualizar esta habilidad, Contacte con un Administrador"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
-
-		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		if ($json === false) {
-			$jsonError = json_last_error_msg();
-			http_response_code(500); // Error interno del servidor
-			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-		}
-
-		return $json; // Retornar el JSON generado
+	
 	}
 
 	/*=============================================
@@ -150,32 +131,22 @@ class ControladorHabilidades
 
 			// Si la respuesta es correcta, retornamos un status 200 y un mensaje de éxito
 			http_response_code(200);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 200,
 				"success" => true,
 				"mensaje" => "Habilidad eliminada con exito"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		} else {
 
 			// Si la respuesta es incorrecta, retornamos un status 500 y un mensaje de error
 			http_response_code(500);
-			$dataRespuesta = json_encode([
+			return json_encode([
 				"status" => 500,
 				"success" => false,
 				"error" => "Habilidad NO eliminada",
 				"mensaje" => "Ha ocurrido un problema al intentar eliminar esta Habilidad, Contacte con un Administrador"
-			]);
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 		}
-
-		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		if ($json === false) {
-			$jsonError = json_last_error_msg();
-			http_response_code(500); // Error interno del servidor
-			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
-		}
-
-		return $json; // Retornar el JSON generado
 
 	}
 
