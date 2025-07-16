@@ -8,7 +8,7 @@ class ModeloMaterias{
 	MOSTRAR MATERIA (GET)
 	=============================================*/
 
-	static public function mdlMostrarMateria($tabla, $item, $valor){
+	static public function mdlMostrarMaterias($tabla, $item, $valor){
 
 		// GET una sola materia
 
@@ -93,8 +93,7 @@ class ModeloMaterias{
 		$stmt = Conexion::conectar()->prepare("UPDATE $tabla 	SET 	name 			= :name,
 																		duration_hours 	= :duration_hours,
 																		semester 		= :semester,
-																		is_assigned 	= :is_assigned,
-																		updated_at		= :updated_at
+																		is_assigned 	= :is_assigned
 																WHERE 	subject_id 		= :subject_id");
 
 		$stmt->bindParam(":subject_id", $datos["subject_id"], PDO::PARAM_INT);
@@ -102,7 +101,6 @@ class ModeloMaterias{
 		$stmt->bindParam(":duration_hours", $datos["duration_hours"], PDO::PARAM_STR);
 		$stmt->bindParam(":semester", $datos["semester"], PDO::PARAM_STR);
 		$stmt->bindParam(":is_assigned", $datos["is_assigned"], PDO::PARAM_INT);
-		$stmt->bindParam(":updated_at", $datos["updated_at"], PDO::PARAM_STR);
 
 		if($stmt -> execute()){
 

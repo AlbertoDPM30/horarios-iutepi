@@ -7,6 +7,8 @@ if(isset($_SESSION["logged"]) == "ok") {
   =============================================*/
   if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdMateria'])) {
 
+    header('Content-Type: application/json; charset=utf-8');
+
     // Si se quiere obtener una sola materia se le da valor a los parametros
     $item = "subject_id"; // Columna de la DB
     $valor = $_POST['obtenerIdMateria']; // ID de la materia que se quiere obtener
@@ -14,9 +16,11 @@ if(isset($_SESSION["logged"]) == "ok") {
     // Enviar los datos al controlador para obtener la materia
     $respuesta = ControladorMaterias::ctrMostrarMaterias($item, $valor);
 
-    echo json_encode($respuesta); // Enviamos la respuesta al cliente
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
 
   } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdMateria'])) {
+
+    header('Content-Type: application/json; charset=utf-8');
 
     $item = null;
     $valor = null;
@@ -24,7 +28,7 @@ if(isset($_SESSION["logged"]) == "ok") {
     // Enviar los datos al controlador para obtener las materias
     $respuesta = ControladorMaterias::ctrMostrarMaterias($item, $valor);
 
-    echo json_encode($respuesta); // Enviamos la respuesta al cliente
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
 
   } else {
 

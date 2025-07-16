@@ -12,6 +12,8 @@ class ControladorUsuarios
 	static public function ctrIniciarSesion()
 	{
 
+		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+
 		if (isset($_POST["username"]) && isset($_POST["password"])) {
 
 			// Validar que el campo de usuario no contenga caracteres especiales
@@ -70,7 +72,7 @@ class ControladorUsuarios
 					
 						// Iniciar sesión y guardar los datos del usuario en la sesión
 						http_response_code(201);
-						return json_encode([
+						$dataRespuesta = json_encode([
 							"status" => 201,
 							"success" => true,
 							"data" => [
@@ -88,13 +90,23 @@ class ControladorUsuarios
 
 						// Si la respuesta no es "ok", significa que hubo un error al iniciar sesión
 						http_response_code(500);
-						return json_encode([
+						$dataRespuesta = json_encode([
 							"status" => 500,
 							"success" => false,
 							"Error" => "Usuario o contraseña incorrectos.",
 							"mensaje" => "Ha ocurrido un problema al iniciar sesion, Contacte con un Administrador"
 						]);
 					}
+
+					$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+					if ($json === false) {
+						$jsonError = json_last_error_msg();
+						http_response_code(500); // Error interno del servidor
+						$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
+					}
+
+					return $json; // Retornar el JSON generado
 					
 				} else {
 					
@@ -136,6 +148,8 @@ class ControladorUsuarios
 	static public function ctrCrearUsuario()
 	{
 
+		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+
 		if (isset($_POST["nuevoUsername"])) {
 
 			$tabla = "users"; // Tabla de usuarios en la base de datos
@@ -158,7 +172,7 @@ class ControladorUsuarios
 
 				// Si es correcta mostrará los datos del usuario recien registrado
 				http_response_code(201);
-				return json_encode([
+				$dataRespuesta = json_encode([
 					"status" => 201,
 					"success" => true,
 					"data" => [
@@ -173,13 +187,23 @@ class ControladorUsuarios
 
 				// Si algo falla retornará un status 500
 				http_response_code(500);
-				return json_encode([
+				$dataRespuesta = json_encode([
 					"status" => 500,
 					"success" => false,
 					"data" => null,
 					"mensaje" => "error al crear el usuario"
 				]);
 			}
+
+			$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+			if ($json === false) {
+				$jsonError = json_last_error_msg();
+				http_response_code(500); // Error interno del servidor
+				$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
+			}
+
+			return $json; // Retornar el JSON generado
 
 		}
 	}
@@ -190,6 +214,8 @@ class ControladorUsuarios
 
 	static public function ctrEditarUsuario()
 	{
+
+		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
 
 		$tabla = "users";
 
@@ -209,39 +235,50 @@ class ControladorUsuarios
 
 		// Crear un array con los datos del usuario a editar
 		$datos = array(
-		"user_id" => $_POST["editarIdUsuario"],
-		"first_name" => trim($_POST["editarNombres"]),
-		"last_name" => trim($_POST["editarApellidos"]),
-		"ci" => trim($_POST["editarCI"]),
-		"updated_at" => $fechaActualizacion
+			"user_id" => $_POST["editarIdUsuario"],
+			"first_name" => trim($_POST["editarNombres"]),
+			"last_name" => trim($_POST["editarApellidos"]),
+			"ci" => trim($_POST["editarCI"]),
+			"updated_at" => $fechaActualizacion
 		);
 
 		$respuesta = ModeloUsuarios::mdlEditarUsuario($tabla, $datos);
 
 		//Recibimos la respuesta
 		if ($respuesta == "ok") {
-		http_response_code(201);
-		return json_encode([
-			"status" => 201,
-			"success" => true,
-			"data" => [
-			"id" => $datos["user_id"],
-			"nombres" => $datos["first_name"],
-			"apellidos" => $datos["last_name"],
-			"ci" => $datos["ci"],
-			"fecha_actualizacion" => $datos["updated_at"]
-			],
-			"mensaje" => "Usuario actualizado"
-		]);
+
+			http_response_code(201);
+			$dataRespuesta = json_encode([
+				"status" => 201,
+				"success" => true,
+				"data" => [
+				"id" => $datos["user_id"],
+				"nombres" => $datos["first_name"],
+				"apellidos" => $datos["last_name"],
+				"ci" => $datos["ci"],
+				"fecha_actualizacion" => $datos["updated_at"]
+				],
+				"mensaje" => "Usuario actualizado"
+			]);
 		} else {
 		
-		http_response_code(500);
-		return json_encode([
-			"status" => 500,
-			"success" => false,
-			"Error" => "No se pudo actualizar el usuario"
-		]);
+			http_response_code(500);
+			$dataRespuesta = json_encode([
+				"status" => 500,
+				"success" => false,
+				"Error" => "No se pudo actualizar el usuario"
+			]);
 		}
+
+		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+		if ($json === false) {
+			$jsonError = json_last_error_msg();
+			http_response_code(500); // Error interno del servidor
+			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
+		}
+
+		return $json; // Retornar el JSON generado
 	}
 
 	/*=============================================
@@ -285,7 +322,7 @@ class ControladorUsuarios
 		
 			// Mensaje de exito si la respuesta es "ok"
 			http_response_code(201);
-			return json_encode([
+			$dataRespuesta = json_encode([
 				"status" => 201,
 				"success" => true,
 				"mensaje" => "Status actualizado correctamente"
@@ -294,8 +331,18 @@ class ControladorUsuarios
 
 			// Si la respuesta no es "ok", significa que hubo un error al Actualizar el status
 			http_response_code(500);
-			return json_encode(["Error" => "Ha ocurrido un problema al actualizar el status"]);
+			$dataRespuesta = json_encode(["Error" => "Ha ocurrido un problema al actualizar el status"]);
 		}
+
+		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+		if ($json === false) {
+			$jsonError = json_last_error_msg();
+			http_response_code(500); // Error interno del servidor
+			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
+		}
+
+		return $json; // Retornar el JSON generado
 		
 	}
 
@@ -324,7 +371,7 @@ class ControladorUsuarios
 		if ($respuesta == "ok") {
 
 			http_response_code(200);
-			return json_encode([
+			$dataRespuesta = json_encode([
 				"status" => 200,
 				"success" => true,
 				"mensaje" => "Usuario eliminado con exito"
@@ -332,13 +379,23 @@ class ControladorUsuarios
 		} else {
 
 			http_response_code(500);
-			return json_encode([
+			$dataRespuesta = json_encode([
 				"status" => 500,
 				"success" => false,
 				"error" => "Usuario NO eliminado",
 				"mensaje" => "Ha ocurrido un problema al intentar eliminar este usuario, Contacte con un Administrador"
 			]);
 		}
+
+		$json = json_encode($dataRespuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+		if ($json === false) {
+			$jsonError = json_last_error_msg();
+			http_response_code(500); // Error interno del servidor
+			$json = json_encode(['error' => "Error generando JSON: $jsonError"]);
+		}
+
+		return $json; // Retornar el JSON generado
 
 	}
 
