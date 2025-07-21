@@ -118,6 +118,58 @@ class ControladorUsuarios
 	}
 
 	/*=============================================
+	CERRAR SESIÓN
+	=============================================*/
+
+	static public function ctrCerrarSesion($user_id, $token)
+	{
+
+		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+
+		if ($user_id === $_SESSION["user_id"] && $token === $_SESSION["token"]) {
+
+			// Verificar si la sesión está iniciada
+			if (!isset($_SESSION["logged"]) || $_SESSION["logged"] !== "ok") {
+				http_response_code(401);
+				return json_encode([
+					"status" => 401,
+					"success" => false,
+					"mensaje" => "No se ha iniciado sesión."
+				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+				exit;
+			}
+
+			// Cerrar sesión y limpiar las variables de sesión
+			$_SESSION["logged"] = null;
+			$_SESSION["user_id"] = null;
+			$_SESSION["nombres"] = null;
+			$_SESSION["apellidos"] = null;
+			$_SESSION["username"] = null;
+			$_SESSION["ci"] = null;
+
+			session_destroy();
+
+			http_response_code(201);
+			return json_encode([
+				"status" => 201,
+				"success" => true,
+				"message" => "Sesion cerrada correctamente."
+			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+		}
+
+		// No coinciden el user_id y el token, o la sesión no está iniciada
+		header('Content-Type: application/json; charset=utf-8');
+		http_response_code(401);
+		return json_encode([
+			"status" => 401,
+			"success" => false,
+			"mensaje" => "No coinciden el user_id o el token, o la sesión no está iniciada."
+		], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+		exit;
+	}
+
+	/*=============================================
 	MOSTRAR USUARIO
 	=============================================*/
 

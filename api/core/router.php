@@ -11,17 +11,17 @@ session_start();
     if (
 
       // PROFESORES
-      $_GET["ruta"] == "profesores"   ||                  
+      $_GET["ruta"] == "profesores"   ||
       
       // HABILIDADES
-      $_GET["ruta"] == "habilidades"  ||                  
+      $_GET["ruta"] == "habilidades"  ||
       
       // MATERIAS
-      $_GET["ruta"] == "materias"     ||                  
+      $_GET["ruta"] == "materias"     ||
       
       // USUARIOS               
-      $_GET["ruta"] == "login"        ||                  
-      $_GET["ruta"] == "logout"       ||                  
+      $_GET["ruta"] == "login"        ||
+      $_GET["ruta"] == "logout"       ||
       $_GET["ruta"] == "usuarios"
     ) {
 
