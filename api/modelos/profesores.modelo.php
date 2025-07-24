@@ -1,139 +1,161 @@
 <?php
 
-require_once "conexion.php";
+require_once "conexion.php"; 
 
-class ModeloProfesores{
+class ModeloProfesores {
 
-	/*=============================================
-	MOSTRAR PROFESORES (GET)
-	=============================================*/
+    /*=============================================
+    MOSTRAR PROFESOR(ES)
+    =============================================*/
+    static public function mdlMostrarProfesores($tabla, $item, $valor) {
+        if ($item != null) {
+            $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :$item");
+            $stmt->bindParam(":" . $item, $valor, PDO::PARAM_STR);
+            $stmt->execute();
+            return [
+                "success" => true,
+                "data" => $stmt->fetch(PDO::FETCH_ASSOC) // Obtener un solo registro
+            ];
+        } else {
+            $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
+            $stmt->execute();
+            return [
+                "success" => true,
+                "data" => $stmt->fetchAll(PDO::FETCH_ASSOC) // Obtener todos los registros
+            ];
+        }
+        $stmt = null;
+    }
 
-	static public function mdlMostrarProfesores($tabla, $item, $valor){
+    /*=============================================
+    CREAR PROFESOR
+    =============================================*/
+    static public function mdlCrearProfesor($tabla, $datos) {
+        try {
+            $stmt = Conexion::conectar()->prepare(
+                "INSERT INTO $tabla (name, ci_code, phone_number, email) 
+                VALUES (:name, :ci_code, :phone_number, :email)"
+            );
 
-		// GET un solo profesor
+            $stmt->bindParam(":name", $datos["name"], PDO::PARAM_STR);
+            $stmt->bindParam(":ci_code", $datos["ci_code"], PDO::PARAM_STR);
+            $stmt->bindParam(":phone_number", $datos["phone_number"], PDO::PARAM_STR);
+            $stmt->bindParam(":email", $datos["email"], PDO::PARAM_STR);
 
-		if($item != null){
+            if ($stmt->execute()) {
+                return "ok";
+            } else {
+                error_log("Error al crear profesor en BD: " . implode(" - ", $stmt->errorInfo()));
+                return "error";
+            }
+        } catch (PDOException $e) {
+            error_log("Excepción en mdlCrearProfesor: " . $e->getMessage());
+            return $e->getMessage();
+        } finally {
+            $stmt = null;
+        }
+    }
 
-			// Preparar la consulta SQL para obtener un profesor en específico
+    /*=============================================
+    EDITAR PROFESOR
+    =============================================*/
+    static public function mdlEditarProfesor($tabla, $datos) {
+        try {
+            if (!isset($datos['teacher_id'])) {
+                return "error_no_id";
+            }
 
-			$stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :$item");
+            $setClauses = [];
+            $bindParams = [];
 
-			$stmt -> bindParam(":".$item, $valor, PDO::PARAM_STR);
+            if (isset($datos['name'])) {
+                $setClauses[] = "name = :name";
+                $bindParams[":name"] = $datos['name'];
+            }
+            if (isset($datos['ci_code'])) {
+                $setClauses[] = "ci_code = :ci_code";
+                $bindParams[":ci_code"] = $datos['ci_code'];
+            }
+            if (isset($datos['phone_number'])) {
+                $setClauses[] = "phone_number = :phone_number";
+                $bindParams[":phone_number"] = $datos['phone_number'];
+            }
+            if (isset($datos['email'])) {
+                $setClauses[] = "email = :email";
+                $bindParams[":email"] = $datos['email'];
+            }
 
-			$stmt -> execute();
+            // Set timezone and get current date/time for updated_at
+            date_default_timezone_set('America/Caracas');
+            $current_datetime = date('Y-m-d H:i:s');
+            
+            // Always update updated_at
+            $setClauses[] = "updated_at = :updated_at";
+            $bindParams[":updated_at"] = $current_datetime;
 
-			return $stmt -> fetch(); // Retorna un solo profesor si se encuentra
+            if (empty($setClauses)) {
+                return "no_data_to_update";
+            }
 
-		}else{
+            $sql = "UPDATE $tabla SET " . implode(", ", $setClauses) . " WHERE teacher_id = :teacher_id";
+            $stmt = Conexion::conectar()->prepare($sql);
 
-			// GET todos los profesores
-			// Preparar la consulta SQL para obtener todos los profesores
+            foreach ($bindParams as $param => $value) {
+                $paramType = PDO::PARAM_STR;
+                if (is_int($value)) {
+                    $paramType = PDO::PARAM_INT;
+                } elseif (is_bool($value)) {
+                    $paramType = PDO::PARAM_BOOL;
+                } elseif (is_null($value)) {
+                    $paramType = PDO::PARAM_NULL;
+                }
+                $stmt->bindValue($param, $value, $paramType);
+            }
+            
+            $stmt->bindValue(":teacher_id", $datos['teacher_id'], PDO::PARAM_INT);
 
-			$stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
+            if ($stmt->execute()) {
+                if ($stmt->rowCount() > 0) {
+                    return "ok";
+                } else {
+                    return "no_changes";
+                }
+            } else {
+                error_log("Error al editar profesor en BD: " . implode(" - ", $stmt->errorInfo()));
+                return "error";
+            }
+        } catch (PDOException $e) {
+            error_log("Excepción en mdlEditarProfesor: " . $e->getMessage());
+            return $e->getMessage();
+        } finally {
+            $stmt = null;
+        }
+    }
 
-			$stmt -> execute();
+    /*=============================================
+    ELIMINAR PROFESOR
+    =============================================*/
+    static public function mdlEliminarProfesor($tabla, $id_profesor) {
+        try {
+            $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE teacher_id = :teacher_id");
+            $stmt->bindParam(":teacher_id", $id_profesor, PDO::PARAM_INT);
 
-			return $stmt -> fetchAll(); // Retorna todos los profesores si no se especifica un item
-
-		}
-
-		$stmt -> close();
-
-		$stmt = null;
-
-	}
-
-	/*=============================================
-	REGISTRO DE PROFESOR (POST)
-	=============================================*/
-
-	static public function mdlCrearProfesor($tabla, $datos){
-
-		// Preparar la consulta SQL para insertar un nuevo profesor
-
-		$stmt = Conexion::conectar()->prepare("INSERT INTO 		$tabla	(name,
-																		ci_code) 
-																VALUES 	(:name,
-																		:ci_code)");
-
-		$stmt->bindParam(":name", $datos["name"], PDO::PARAM_STR); // Vincular el parámetro name
-		$stmt->bindParam(":ci_code", $datos["ci_code"], PDO::PARAM_STR); // Vincular el parámetro ci_code
-
-		// Ejecutar la consulta SQL
-		if($stmt->execute()){
-
-			return "ok"; // Retornar 'ok' si la inserción fue exitosa
-
-		}else{
-
-			return "error"; // Retornar 'error' si hubo un problema al insertar el profesor
-		
-		}
-
-		// Cerrar la conexión y liberar recursos
-		$stmt->close();
-		
-		$stmt = null;
-
-	}
-
-	/*=============================================
-	EDITAR PROFESOR (PUT)
-	=============================================*/
-
-	static public function mdlEditarProfesor($tabla, $datos){
-	
-		$stmt = Conexion::conectar()->prepare("UPDATE $tabla 	SET 	name 		= :name,
-																		ci_code		= :ci_code,
-																		updated_at	= :updated_at
-																WHERE 	teacher_id 	= :teacher_id");
-
-		$stmt->bindParam(":teacher_id", $datos["teacher_id"], PDO::PARAM_INT);
-		$stmt->bindParam(":name", $datos["name"], PDO::PARAM_STR);
-		$stmt->bindParam(":ci_code", $datos["ci_code"], PDO::PARAM_STR);
-		$stmt->bindParam(":updated_at", $datos["updated_at"], PDO::PARAM_STR);
-
-		if($stmt -> execute()){
-
-			return "ok";
-		
-		}else{
-
-			return "error";	
-
-		}
-
-		$stmt -> close();
-
-		$stmt = null;
-
-	}
-
-	/*=============================================
-	BORRAR PROFESOR (DELETE)
-	=============================================*/
-
-	static public function mdlEliminarProfesor($tabla, $datos){
-
-		$stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE teacher_id = :teacher_id");
-
-		$stmt -> bindParam(":teacher_id", $datos, PDO::PARAM_INT);
-
-		if($stmt -> execute()){
-
-			return "ok";
-		
-		}else{
-
-			return "error";	
-
-		}
-
-		$stmt -> close();
-
-		$stmt = null;
-
-
-	}
-
+            if ($stmt->execute()) {
+                if ($stmt->rowCount() > 0) {
+                    return "ok";
+                } else {
+                    // Si no existe un ID
+                    return "no_found"; 
+                }
+            } else {
+                error_log("Error al eliminar profesor en BD: " . implode(" - ", $stmt->errorInfo()));
+                return "error";
+            }
+        } catch (PDOException $e) {
+            error_log("Excepción en mdlEliminarProfesor: " . $e->getMessage());
+            return $e->getMessage();
+        } finally {
+            $stmt = null;
+        }
+    }
 }

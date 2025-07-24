@@ -1,23 +1,36 @@
 <?php
-/*=============================================
-CERRAR SESION
-=============================================*/
-if (isset($_POST["idUsuarioSesion"]) && isset($_POST["tokenSesion"])) {
+
+// Configurar cabeceras para respuestas JSON
+header('Content-Type: application/json; charset=utf-8');
+
+// Obtener método HTTP
+$metodo = $_SERVER['REQUEST_METHOD'];
+
+// Procesar datos de entrada (JSON)
+$entrada = json_decode(file_get_contents('php://input'), true);
+
+if ($metodo === 'POST') {
     
-    echo ControladorUsuarios::ctrCerrarSesion(intVal($_POST["idUsuarioSesion"]), $_POST["tokenSesion"]);
-    exit;
+    $headers = apache_request_headers();
+    $authHeader = $headers['Authorization'] ?? '';
+    $token_from_header = null;
+    if (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+        $token_from_header = $matches[1];
+    }
+
+    $user_id_from_client = $entrada['user_id'] ?? null; 
     
+    $respuesta = ControladorUsuarios::ctrCerrarSesion($user_id_from_client, $token_from_header);
+    
+    http_response_code($respuesta['status']);
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 } else {
 
-    // Si no se ha iniciado sesión o los parámetros son incorrectos
-    
-    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
-    http_response_code(402);
+    // Si no es un método POST, responder con error 405
+    http_response_code(405);
     echo json_encode([
-        "status" => 402,
+        "status" => 405,
         "success" => false,
-        "mensaje" => "No se pudo cerrar la sesión.",
-        "descripcion" => "Parametro invalido o sesion no iniciada."
+        "message" => "Método no permitido para esta ruta."
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-    exit;
 }

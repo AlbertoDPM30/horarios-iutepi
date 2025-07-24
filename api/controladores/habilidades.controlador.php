@@ -1,153 +1,203 @@
 <?php
 
-class ControladorHabilidades
-{
+class ControladorHabilidades {
 
-	/*=============================================
-	MOSTRAR HABILIDADES
-	=============================================*/
+    /*=============================================
+    MOSTRAR HABILIDAD(ES)
+    =============================================*/
+    static public function ctrMostrarHabilidades($item = null, $valor = null) {
+        try {
+            $respuesta = ModeloHabilidades::mdlMostrarHabilidades("skills", $item, $valor);
+            
+            return [
+                "status" => 200,
+                "success" => true,
+                "data" => $respuesta
+            ];
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrMostrarHabilidades: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error al obtener habilidades"
+            ];
+        }
+    }
 
-	static public function ctrMostrarHabilidades($item, $valor)
-	{
+    /*=============================================
+    CREAR HABILIDAD
+    =============================================*/
+    static public function ctrCrearHabilidad($datos) {
+        try {
+            // Validar que el nombre no esté vacío
+            if (empty($datos['skill_name'])) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "El nombre de la habilidad es requerido"
+                ];
+            }
 
-		$tabla = "skills"; // Definimos la tabla de la DB
+            // Verificar si la habilidad ya existe
+            $existente = ModeloHabilidades::mdlMostrarHabilidades("skills", "skill_name", $datos['skill_name']);
+            if ($existente) {
+                return [
+                    "status" => 409,
+                    "success" => false,
+                    "message" => "La habilidad ya existe"
+                ];
+            }
 
-		$respuesta = ModeloHabilidades::MdlMostrarHabilidades($tabla, $item, $valor);
+            // Crear la habilidad
+            $datos = ["skill_name" => trim($datos['skill_name'])];
+            $resultado = ModeloHabilidades::mdlCrearHabilidad("skills", $datos);
 
-		return $respuesta;
-	}
+            if ($resultado === "ok") {
+                return [
+                    "status" => 201,
+                    "success" => true,
+                    "message" => "Habilidad creada exitosamente",
+                    "data" => $datos
+                ];
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al crear habilidad"
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrCrearHabilidad: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al crear habilidad",
+                "error" => $e->getMessage()
+            ];
+        }
+    }
 
-	/*=============================================
-	REGISTRAR HABILIDAD
-	=============================================*/
+    /*=============================================
+    ACTUALIZAR HABILIDAD
+    =============================================*/
+    static public function ctrEditarHabilidad($datos) {
+        try {
+            // Validar datos de entrada
+            if (empty($datos['skill_id']) || empty($datos)) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "ID y nombre son requeridos"
+                ];
+            }
 
-	static public function ctrCrearHabilidad()
-	{
+            // Verificar si la habilidad existe
+            $habilidad = ModeloHabilidades::mdlMostrarHabilidades("skills", "skill_id", $datos['skill_id']);
+            if (!$habilidad) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Habilidad no encontrada"
+                ];
+            }
 
-		if (isset($_POST["nuevoNombreHabilidad"])) {
+            // Verificar si el nuevo nombre ya existe (para otra habilidad)
+            $existente = ModeloHabilidades::mdlMostrarHabilidades("skills", "skill_name", $datos['skill_name']);
+            if ($existente && $existente['skill_id'] != $datos['skill_id']) {
+                return [
+                    "status" => 409,
+                    "success" => false,
+                    "message" => "El nombre ya está en uso por otra habilidad"
+                ];
+            }
 
-			header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+            // Actualizar la habilidad
+            $datos = [
+                "skill_id" => $datos['skill_id'],
+                "skill_name" => trim($datos['skill_name']),
+                "updated_at" => date('Y-m-d H:i:s')
+            ];
 
-			$tabla = "skills"; // Tabla de habilidades en la base de datos
+            $resultado = ModeloHabilidades::mdlEditarHabilidad("skills", $datos);
 
-			// Crear un array con los datos del nueva habilidad
-			$datos = array("skill_name" => trim($_POST["nuevoNombreHabilidad"]));
+            if ($resultado === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Habilidad actualizada exitosamente",
+                    "data" => [
+                        "skill_id" => $datos['skill_id'],
+                        "skill_name" => $datos['skill_name']
+                    ]
+                ];
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al actualizar habilidad"
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrEditarHabilidad: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al actualizar habilidad"
+            ];
+        }
+    }
 
-			$respuesta = ModeloHabilidades::mdlCrearHabilidad($tabla, $datos);
+    /*=============================================
+    ELIMINAR HABILIDAD
+    =============================================*/
+    static public function ctrEliminarHabilidad($id) {
+        try {
+            // Validar ID
+            if (empty($id)) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "ID de habilidad es requerido"
+                ];
+            }
 
-			// Verificar la respuesta del controlador
-			if ($respuesta == "ok") {
+            // Verificar si la habilidad existe
+            $habilidad = ModeloHabilidades::mdlMostrarHabilidades("skills", "skill_id", $id);
+            if (!$habilidad) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Habilidad no encontrada"
+                ];
+            }
 
-				// Si es correcta mostrará los datos recién registrados
-				http_response_code(201);
-				return json_encode([
-					"status" => 201,
-					"success" => true,
-					"data" => [
-						"habilidad" => $datos["skill_name"]
-					],
-					"mensaje" => "habilidad creada correctamente"
-				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-			} else {
+            // Eliminar la habilidad
+            $resultado = ModeloHabilidades::mdlEliminarHabilidad("skills", $id);
 
-				// Si algo falla retornará un status 500
-				http_response_code(500);
-				return json_encode([
-					"status" => 500,
-					"success" => false,
-					"data" => null,
-					"mensaje" => "error al crear la nueva habilidad",
-				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-			}
-
-		}
-	}
-
-	/*=============================================
-	EDITAR HABILIDAD
-	=============================================*/
-
-	static public function ctrEditarHabilidad()
-	{
-
-		$tabla = "skills";
-
-		date_default_timezone_set('America/Caracas');
-
-		$fechaActualizacion = date('Y-m-d H:i:s');
-		
-		// Crear un array con los datos de la habilidad a editar
-		$datos = array(
-		"skill_id" => $_POST["editarIdHabilidad"],
-		"skill_name" => trim($_POST["editarNombreHabilidad"]),
-		"updated_at" => $fechaActualizacion
-		);
-
-		$respuesta = ModeloHabilidades::mdlEditarHabilidad($tabla, $datos);
-
-		//Recibimos la respuesta
-		if ($respuesta == "ok") {
-
-			// Retornamos la respuesta con los datos actualizado
-			http_response_code(201);
-			return json_encode([
-				"status" => 201,
-				"success" => true,
-				"data" => [
-					"id" => $datos["skill_id"],
-					"habilidad" => $datos["skill_name"],
-					"fecha_actualizacion" => $datos["updated_at"]
-				],
-				"mensaje" => "Habilidad actualizada correctamente"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-		} else {
-		
-			// Si algo falla retornará un status 500 y un mensaje de error
-			http_response_code(500);
-			return json_encode([
-				"status" => 500,
-				"success" => false,
-				"Error" => "No se pudo actualizar la habilidad",
-				"mensaje" => "Ha ocurrido un problema al intentar actualizar esta habilidad, Contacte con un Administrador"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-		}
-	
-	}
-
-	/*=============================================
-	ELIMINAR HABILIDAD
-	=============================================*/
-
-	static public function ctrEliminarHabilidad(){
-
-		$tabla ="skills";
-
-		$datos = $_POST["EliminarIdHabilidad"]; // Recibir el id a eliminar
-
-		$respuesta = ModeloHabilidades::mdlEliminarHabilidad($tabla, $datos);
-
-		// Verificamos la respuesta del modelo
-		if ($respuesta == "ok") {
-
-			// Si la respuesta es correcta, retornamos un status 200 y un mensaje de éxito
-			http_response_code(200);
-			return json_encode([
-				"status" => 200,
-				"success" => true,
-				"mensaje" => "Habilidad eliminada con exito"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-		} else {
-
-			// Si la respuesta es incorrecta, retornamos un status 500 y un mensaje de error
-			http_response_code(500);
-			return json_encode([
-				"status" => 500,
-				"success" => false,
-				"error" => "Habilidad NO eliminada",
-				"mensaje" => "Ha ocurrido un problema al intentar eliminar esta Habilidad, Contacte con un Administrador"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-		}
-
-	}
-
+            if ($resultado === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Habilidad eliminada exitosamente"
+                ];
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al eliminar habilidad"
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrEliminarHabilidad: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al eliminar habilidad"
+            ];
+        }
+    }
 }

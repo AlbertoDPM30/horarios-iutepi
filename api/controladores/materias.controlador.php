@@ -1,166 +1,180 @@
 <?php
 
-class ControladorMaterias
-{
+class ControladorMaterias {
 
-	/*=============================================
-	MOSTRAR MATERIAS
-	=============================================*/
+    /*=============================================
+    MOSTRAR MATERIA(S) (GET)
+    =============================================*/
+    static public function ctrMostrarMaterias($item = null, $valor = null) {
+        try {
+            $respuesta = ModeloMaterias::mdlMostrarMaterias("subjects", $item, $valor);
+            
+            if ($item !== null && $valor !== null && !$respuesta) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Materia no encontrada."
+                ];
+            }
 
-	static public function ctrMostrarMaterias($item, $valor)
-	{
+            return [
+                "status" => 200,
+                "success" => true,
+                "data" => $respuesta
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Error en ctrMostrarMaterias: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Ocurrió un error al procesar la solicitud."
+            ];
+        }
+    }
 
-		$tabla = "subjects"; // Definimos la tabla de la DB
+    /*=============================================
+    CREAR MATERIA (POST)
+    =============================================*/
+    static public function ctrCrearMateria($datos) { 
+        try {
 
-		$respuesta = ModeloMaterias::MdlMostrarMaterias($tabla, $item, $valor);
+            $datosModelo = [
+                'name' => $datos['name'],
+                'duration_hours' => $datos['duration_hours'],
+                'semester' => $datos['semester']
+            ];
 
-		return $respuesta;
-	}
+            $respuesta = ModeloMaterias::mdlCrearMateria("subjects", $datosModelo);
 
-	/*=============================================
-	REGISTRAR MATERIA
-	=============================================*/
+            if ($respuesta === "ok") {
+                return [
+                    "status" => 201,
+                    "success" => true,
+                    "message" => "Materia creada exitosamente."
+                ];
+            } else {
+                error_log("Error en ModeloMaterias::mdlCrearMateria: " . $respuesta);
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "No se pudo crear la materia. Inténtalo de nuevo."
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("Error en ctrCrearMateria: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Ocurrió un error inesperado al procesar la solicitud."
+            ];
+        }
+    }
 
-	static public function ctrCrearMateria()
-	{
+    /*=============================================
+    EDITAR MATERIA (PUT)
+    =============================================*/
+    static public function ctrEditarMateria($datos) { 
+        try {
+            $editarIdMateria = $datos['subject_id']; // ID es obligatorio y ya validado en el router
 
-		if (isset($_POST["nuevaMateria"])) {
+            // Validar que la materia exista antes de intentar actualizar
+            $materiaExistente = ModeloMaterias::mdlMostrarMaterias("subjects", "subject_id", $editarIdMateria);
+            if (!$materiaExistente) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Materia no encontrada para actualizar."
+                ];
+            }
 
-			$tabla = "subjects"; // Tabla de materias en la base de datos
+            // Prepara los datos para el modelo
+            $datosModelo = [
+                'subject_id' => $editarIdMateria
+            ];
+            if (isset($datos['name'])) $datosModelo['name'] = $datos['name'];
+            if (isset($datos['duration_hours'])) $datosModelo['duration_hours'] = $datos['duration_hours'];
+            if (isset($datos['semester'])) $datosModelo['semester'] = $datos['semester'];
+            if (isset($datos['is_assigned'])) $datosModelo['is_assigned'] = $datos['is_assigned'];
 
-			header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+            $respuesta = ModeloMaterias::mdlEditarMateria("subjects", $datosModelo);
 
-			// Crear un array con los datos del nueva materia
-			$datos = array(
-				"name" => trim($_POST["nuevaMateria"]),
-				"duration_hours" => trim($_POST["nuevaHorasDuracion"]),
-				"semester" => trim($_POST["nuevoSemestre"]),
-				"is_assigned" => trim($_POST["nuevoAsignado"])
-			);
+            if ($respuesta === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Materia actualizada correctamente."
+                ];
+            } else if ($respuesta === "error_no_id") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "No se pudo actualizar la materia, Hace Falta el ID."
+                ];
+            } else if ($respuesta === "no_data_to_update") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "No se pudo actualizar la materia, No se han recibido datos."
+                ];
+            }
+            else {
+                error_log("Error en ModeloMaterias::mdlEditarMateria: " . $respuesta);
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "No se pudo actualizar la materia. Error en el servidor. Contacta con un administrador",
+                    "res" => $respuesta
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("Error en ctrEditarMateria: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Ocurrió un error inesperado al procesar la solicitud."
+            ];
+        }
+    }
 
-			$respuesta = ModeloMaterias::mdlCrearMateria($tabla, $datos);
+    /*=============================================
+    ELIMINAR MATERIA (DELETE)
+    =============================================*/
+    static public function ctrEliminarMateria($subject_id) { // Recibe el ID directamente
+        try {
+            // Validar que la materia exista antes de intentar eliminar
+            $materiaExistente = ModeloMaterias::mdlMostrarMaterias("subjects", "subject_id", $subject_id);
+            if (!$materiaExistente) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Materia no encontrada para eliminar."
+                ];
+            }
 
-			// Verificar la respuesta del controlador
-			if ($respuesta == "ok") {
+            $respuesta = ModeloMaterias::mdlEliminarMateria("subjects", $subject_id);
 
-				// Si es correcta mostrará los datos recién registrados
-				http_response_code(201);
-				return json_encode([
-					"status" => 201,
-					"success" => true,
-					"data" => [
-						"materia" => $datos["name"],
-						"horas_duracion" => $datos["duration_hours"],
-						"semestre" => $datos["semester"],
-						"asignado" => $datos["is_assigned"],
-					],
-					"mensaje" => "Materia creada correctamente"
-				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-			} else {
-
-				// Si algo falla retornará un status 500
-				http_response_code(500);
-				return json_encode([
-					"status" => 500,
-					"success" => false,
-					"data" => null,
-					"mensaje" => "error al crear la nueva materia",
-				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-			}
-
-
-		}
-	}
-
-	/*=============================================
-	EDITAR MATERIA
-	=============================================*/
-
-	static public function ctrEditarMateria()
-	{
-
-		$tabla = "subjects";
-
-		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
-
-		// Crear un array con los datos de la materia a editar
-		$datos = array(
-			"subject_id" => $_POST["editarIdMateria"],
-			"name" => trim($_POST["editarMateria"]),
-			"duration_hours" => trim($_POST["editarHorasDuracion"]),
-			"semester" => trim($_POST["editarSemestre"]),
-			"is_assigned" => trim($_POST["editarAsignado"])
-		);
-
-		$respuesta = ModeloMaterias::mdlEditarMateria($tabla, $datos);
-
-		//Recibimos la respuesta
-		if ($respuesta == "ok") {
-
-			// Retornamos la respuesta con los datos actualizados
-			http_response_code(201);
-			return json_encode([
-				"status" => 201,
-				"success" => true,
-				"data" => [
-					"id" => $datos["subject_id"],
-					"materia" => $datos["name"],
-					"horas_duracion" => $datos["duration_hours"],
-					"semestre" => $datos["semester"],
-					"asignado" => $datos["is_assigned"]
-				],
-				"mensaje" => "Materia actualizada correctamente"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-		} else {
-		
-			// Si algo falla retornará un status 500 y un mensaje de error
-			http_response_code(500);
-			return json_encode([
-				"status" => 500,
-				"success" => false,
-				"Error" => "No se pudo actualizar la Materia",
-				"mensaje" => "Ha ocurrido un problema al intentar actualizar esta materia, Contacte con un Administrador"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-		}
-
-
-	}
-
-	/*=============================================
-	ELIMINAR MATERIA
-	=============================================*/
-
-	static public function ctrEliminarMateria(){
-
-		$tabla ="subjects";
-
-		$datos = $_POST["EliminarIdMateria"]; // Recibir el id a eliminar
-
-		$respuesta = ModeloMaterias::mdlEliminarMateria($tabla, $datos);
-
-		// Verificamos la respuesta del modelo
-		if ($respuesta == "ok") {
-
-			// Si la respuesta es correcta, retornamos un status 200 y un mensaje de éxito
-			http_response_code(200);
-			return json_encode([
-				"status" => 200,
-				"success" => true,
-				"mensaje" => "Materia eliminada con exito"
-			]);
-		} else {
-
-			// Si la respuesta es incorrecta, retornamos un status 500 y un mensaje de error
-			http_response_code(500);
-			return json_encode([
-				"status" => 500,
-				"success" => false,
-				"error" => "Materia NO eliminada",
-				"mensaje" => "Ha ocurrido un problema al intentar eliminar esta Materia, Contacte con un Administrador"
-			]);
-		}
-
-	}
-
+            if ($respuesta === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Materia eliminada correctamente."
+                ];
+            } else {
+                error_log("Error en ModeloMaterias::mdlEliminarMateria: " . $respuesta);
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "No se pudo eliminar la materia. Inténtalo de nuevo."
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("Error en ctrEliminarMateria: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Ocurrió un error inesperado al procesar la solicitud."
+            ];
+        }
+    }
 }
