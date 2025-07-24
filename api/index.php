@@ -1,8 +1,4 @@
 <?php
-// Permitir origen específico o cualquiera 
-header("Access-Control-Allow-Origin: *"); 
-header("Access-Control-Allow-Methods: POST, GET, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
 /*=============================================
    CONTROLADORES
 =============================================*/

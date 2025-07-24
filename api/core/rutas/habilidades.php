@@ -1,125 +1,137 @@
 <?php
 
-// Protegemos la ruta
-if(isset($_SESSION["logged"]) == "ok") {
+// Configurar cabeceras para respuestas JSON
+header('Content-Type: application/json; charset=utf-8');
 
-  /*=============================================
-  OBTENER HABILIDAD(ES) (POST || GET)
-  =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdHabilidad'])) {
+// Obtener método HTTP
+$metodo = $_SERVER['REQUEST_METHOD'];
 
-    header('Content-Type: application/json; charset=utf-8');
+$entrada = json_decode(file_get_contents('php://input'), true);
 
-    // Si se quiere obtener una sola habilidad se le da valor a los parametros
-    $item = "skill_id"; // Columna de la DB
-    $valor = $_POST['obtenerIdHabilidad']; // ID de la habilidad que se quiere obtener
+// Manejar cada método HTTP
+switch ($metodo) {
 
-    // Enviar los datos al controlador para obtener la hablidad
-    $respuesta = ControladorHabilidades::ctrMostrarHabilidades($item, $valor);
+    /*=============================================
+    OBTENER HABILIDAD(ES) (GET)
+    =============================================*/
+    case 'GET':
+        $item = null;
+        $valor = null;
 
-    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
+        if (isset($_GET['id'])) {
+            $item = "skill_id";
+            $valor = $_GET['id'];
+        }
 
-  } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdHabilidad'])) {
+        // Llamar al método del controlador
+        $response = ControladorHabilidades::ctrMostrarHabilidades($item, $valor);
+        
+        // El controlador ya devuelve el formato de respuesta adecuado
+        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
 
-    $item = null;
-    $valor = null;
+    /*=============================================
+    CREAR NUEVA HABILIDAD (POST)
+    =============================================*/
+    case 'POST':
+        // Validar que el campo 'skill_name' no esté vacío
+        if (empty($entrada['skill_name'])) {
+            http_response_code(400); 
+            echo json_encode([
+                "status" => 400,
+                "success" => false,
+                "message" => "El campo 'skill_name' es obligatorio para crear una habilidad."
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break; 
+        }
+        
+        // Los datos a enviar al controlador
+        $datosParaCrear = [
+            'skill_name' => $entrada['skill_name']
+        ];
+        
+        // Llamar al método del controlador para crear la habilidad
+        $response = ControladorHabilidades::ctrCrearHabilidad($datosParaCrear);
 
-    // Enviar los datos al controlador para obtener las habilidades
-    $respuesta = ControladorHabilidades::ctrMostrarHabilidades($item, $valor);
+        if ($response['success']) {
+            http_response_code(201); 
+        } else {
+            http_response_code($response['status']);
+        }
+        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
 
-    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
+    /*=============================================
+    ACTUALIZAR HABILIDAD (PUT)
+    =============================================*/
+    case 'PUT':
+        // Validar que los campos 'skill_id' y 'skill_name' no estén vacíos
+        if (empty($entrada['skill_id']) || empty($entrada['skill_name'])) {
+            http_response_code(400); 
+            echo json_encode([
+                "status" => 400,
+                "success" => false,
+                "message" => "Los campos 'skill_id' y 'skill_name' son obligatorios para actualizar una habilidad."
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
+        }
+        
+        // Los datos a enviar al controlador
+        $datosParaActualizar = [
+            'skill_id' => $entrada['skill_id'],
+            'skill_name' => $entrada['skill_name']
+        ];
+        
+        // Llamar al método del controlador para actualizar la habilidad
+        $response = ControladorHabilidades::ctrEditarHabilidad($datosParaActualizar);
+        
+        if ($response['success']) {
+            http_response_code(200); 
+        } else {
+            http_response_code($response['status']);
+        }
+        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
+        
+    /*=============================================
+    ELIMINAR HABILIDAD (DELETE)
+    =============================================*/
+    case 'DELETE':
+        // Validar que el parámetro 'id' esté presente en la URL
+        if (!isset($_GET['id'])) {
+            http_response_code(400); 
+            echo json_encode([
+                "status" => 400,
+                "success" => false,
+                "message" => "Se requiere el parámetro 'id' para eliminar una habilidad."
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
+        }
+        
+        $idToDelete = $_GET['id'];
+        
+        // Llamar al método del controlador para eliminar la habilidad
+        $response = ControladorHabilidades::ctrEliminarHabilidad($idToDelete);
+        
+        if ($response['success']) {
+            http_response_code(200); 
+        } else {
+            http_response_code($response['status']);
+        }
+        echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
 
-  } else {
-
-    json_encode([
-      "status" => 401,
-      "success" => false,
-      "error" => "Parametros o datos incorrectos"
-    ]);
-  }
-
-  /*=============================================
-  REGISTRAR NUEVA HABILIDAD (POST)
-  =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["nuevoNombreHabilidad"])) {
-
-    // Validar que los campos no estén vacíos
-    if (empty($_POST["nuevoNombreHabilidad"])) {
-
-      echo json_encode(["mensaje" => "Todos los campos son obligatorios."]);
-      exit;
-    }
-    
-    $item = "name";
-    $valor = $_POST["nuevoNombreHabilidad"];
-
-    // Enviar los datos al controlador para obtener las habilidades
-    $respuesta = ControladorHabilidades::ctrMostrarHabilidades($item, $valor);
-
-    if ($respuesta) {
-      // Si la habilidad ya existe, se retorna un mensaje
-      http_response_code(400);
-      echo json_encode([
-        "status" => 00,
-        "success" => false,
-        "aviso" => "Esta Habilidad ya se encuentra registrada"
-      ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-      exit;
-    }
-
-    // Mostramos los datos desde el controlador de la habilidad creada
-    echo ControladorHabilidades::ctrCrearHabilidad();
-
-  }
-
-  /*=============================================
-  EDITAR HABILIDAD (POST)
-  =============================================*/
-  if($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["editarIdHabilidad"])) {
-
-    // Se muestran los datos recibidos del controlador
-    echo ControladorHabilidades::ctrEditarHabilidad();
-  }
-
-  /*=============================================
-  VALIDAR NO REPETIR HABILIDAD
-  =============================================*/
-
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["validarHabilidad"])) {
-
-    $item = "skill_name"; // Columna de la DB
-    $valor = $_POST['validarHabilidad']; // habilidad a validar
-
-    // Enviar los datos al controlador para obtener la habilidad
-    $respuesta = ControladorHabilidades::ctrMostrarHabilidades($item, $valor);
-
-    // Enviamos la respuesta al cliente si ya existe esa habilidad
-    if ($respuesta) {
-      
-      echo json_encode([
-        "status" => 200,
-        "success" => true,
-        "aviso" => "Esta Habilidad ya se encuentra registrada"
-      ]);
-    }
-
-  }
-
-  /*=============================================
-  ELMINAR Habilidad
-  =============================================*/
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["EliminarIdHabilidad"])) {
-
-    echo ControladorHabilidades::ctrEliminarHabilidad();
-  }
-
-} else {
-
-  // Si NO hay una sesion iniciada, mostrará un error
-  echo json_encode([
-    "status" => 402,
-    "success" => false,
-    "error" => "Acceso no autorizado",
-    "mensaje" => "Haz intentado a acceder a una ruta protegida, Inicie sesion y vuelva a intentarlo"
-  ]);
+    /*=============================================
+    MÉTODO NO PERMITIDO
+    =============================================*/
+    default:
+        http_response_code(405); 
+        echo json_encode([
+            "status" => 405,
+            "success" => false,
+            "message" => "Método no permitido para esta ruta."
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
 }
+
+?>

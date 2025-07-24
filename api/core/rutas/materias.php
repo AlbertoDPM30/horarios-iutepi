@@ -1,127 +1,131 @@
 <?php
-// Protegemos la ruta
-if(isset($_SESSION["logged"]) == "ok") {
 
-  /*=============================================
-  OBTENER MATERIA(S) (POST || GET)
-  =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdMateria'])) {
+/*=============================================
+RUTAS PARA EL RECURSO DE MATERIAS
+=============================================*/
+if (isset($_GET["ruta"]) && $_GET["ruta"] === "materias") {
 
     header('Content-Type: application/json; charset=utf-8');
 
-    // Si se quiere obtener una sola materia se le da valor a los parametros
-    $item = "subject_id"; // Columna de la DB
-    $valor = $_POST['obtenerIdMateria']; // ID de la materia que se quiere obtener
+    switch ($_SERVER['REQUEST_METHOD']) {
+        
+        /*=========================================
+        OBTENER MATERIA(S)
+        ==========================================*/
+        case 'GET':
+            $item = null;
+            $valor = null;
 
-    // Enviar los datos al controlador para obtener la materia
-    $respuesta = ControladorMaterias::ctrMostrarMaterias($item, $valor);
+            if (isset($_GET['id'])) {
+                // Si se solicita una materia específica por ID
+                $item = "subject_id";
+                $valor = $_GET['id'];
+            } elseif (isset($_GET['name'])) {
+                // Si se solicita una materia específica por nombre (útil para validación)
+                $item = "name";
+                $valor = $_GET['name'];
+            }
 
-    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
+            $response = ControladorMaterias::ctrMostrarMaterias($item, $valor);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
 
-  } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdMateria'])) {
+        /*=========================================
+        REGISTRAR NUEVA MATERIA
+        ==========================================*/
+        case 'POST':
+            $datos = json_decode(file_get_contents('php://input'), true);
 
-    header('Content-Type: application/json; charset=utf-8');
+            // Validar campos obligatorios
+            if (empty($datos['name']) || empty($datos['duration_hours']) || empty($datos['semester'])) {
+                echo json_encode([
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "Los campos 'name', 'duration_hours' y 'semester' son obligatorios."
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                break;
+            }
 
-    $item = null;
-    $valor = null;
+            // Validar si la materia ya existe por nombre
+            $materiaExistente = ControladorMaterias::ctrMostrarMaterias("name", $datos['name']);
+            if ($materiaExistente['success'] && $materiaExistente['data']) {
+                echo json_encode([
+                    "status" => 409, 
+                    "success" => false,
+                    "message" => "Esta Materia ya se encuentra registrada."
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                break;
+            }
 
-    // Enviar los datos al controlador para obtener las materias
-    $respuesta = ControladorMaterias::ctrMostrarMaterias($item, $valor);
+            $response = ControladorMaterias::ctrCrearMateria($datos); // Pasar los datos al controlador
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
 
-    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
+        /*=========================================
+        EDITAR MATERIA
+        ==========================================*/
+        case 'PUT':
+            $datos = json_decode(file_get_contents('php://input'), true);
 
-  } else {
+            if (empty($datos['subject_id'])) {
+                echo json_encode([
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "El 'subject_id' es obligatorio para actualizar una materia."
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                break;
+            }
 
-    json_encode([
-      "status" => 401,
-      "success" => false,
-      "error" => "Parametros o datos incorrectos"
-    ]);
-  }
+            $response = ControladorMaterias::ctrEditarMateria($datos); // Enviar los datos al controlador
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
 
-  /*=============================================
-  REGISTRAR NUEVA MATERIA (POST)
-  =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["nuevaMateria"])) {
+        /*=========================================
+        ACTUALIZAR ESTADO ASIGNACIÓN MATERIA
+        ==========================================*/
+        case 'PATCH':
+            $datos = json_decode(file_get_contents('php://input'), true);
 
-    // Validar que los campos no estén vacíos
-    if (empty($_POST["nuevaMateria"] || empty($_POST["nuevaHorasDuracion"]) || empty($_POST["nuevoSemestre"]))) {
+            if ($datos['id'] === null || $datos['is_assigned'] === null) {
+                http_response_code(400);
+                echo json_encode([
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "Se requiere 'id' e 'is_assigned' para actualizar el estado del asignación de la materia."
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                break;
+            }
 
-      echo json_encode(["mensaje" => "Todos los campos son obligatorios."]);
-      exit;
+            $respuesta = ControladorMaterias::ctrEditarMateria($id, $asignar);
+            http_response_code($respuesta['status']);
+            echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
+
+        /*=========================================
+        ELIMINAR MATERIA
+        ==========================================*/
+        case 'DELETE':
+            if (!isset($_GET['id'])) {
+                echo json_encode([
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "El 'id' de la materia es obligatorio para eliminar."
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                break;
+            }
+
+            $response = ControladorMaterias::ctrEliminarMateria($_GET['id']); // Enviar el ID al controlador
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
+
+        default:
+            // Método no permitido
+            http_response_code(405); // Method Not Allowed
+            echo json_encode([
+                "status" => 405,
+                "success" => false,
+                "message" => "Método no permitido para esta ruta."
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
     }
-    
-    $item = "name";
-    $valor = $_POST["nuevaMateria"];
-
-    // Enviar los datos al controlador para obtener las materias
-    $respuesta = ControladorMaterias::ctrMostrarMaterias($item, $valor);
-
-    if ($respuesta) {
-
-      // Si ya existe una materia con ese nombre, retornará un error
-      http_response_code(400);
-      echo json_encode([
-        "status" => 400,
-        "success" => false,
-        "aviso" => "Esta Materia ya se encuentra registrada"
-      ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-      exit;
-    }
-
-    // Mostramos los datos desde el controlador de la materia creada
-    echo ControladorMaterias::ctrCrearMateria();
-
-  }
-
-  /*=============================================
-  EDITAR MATERIA (POST)
-  =============================================*/
-  if($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["editarIdMateria"])) {
-
-    // Se muestran los datos recibidos del controlador
-    echo ControladorMaterias::ctrEditarMateria();
-  }
-
-  /*=============================================
-  VALIDAR NO REPETIR MATERIA
-  =============================================*/
-
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["validarMateria"])) {
-
-    $item = "name"; // Columna de la DB
-    $valor = $_POST['validarMateria']; // Materia a validar
-
-    // Enviar los datos al controlador para obtener la Materia
-    $respuesta = ControladorMaterias::ctrMostrarMaterias($item, $valor);
-
-    // Enviamos la respuesta al cliente si ya existe esa Materia
-    if ($respuesta) {
-      
-      echo json_encode([
-        "status" => 200,
-        "success" => true,
-        "aviso" => "Esta Materia ya se encuentra registrada"
-      ]);
-    }
-
-  }
-
-  /*=============================================
-  ELMINAR MATERIA
-  =============================================*/
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["EliminarIdMateria"])) {
-
-    echo ControladorMaterias::ctrEliminarMateria();
-  }
-
-} else {
-
-  // Si NO hay una sesion iniciada, mostrará un error
-  echo json_encode([
-    "status" => 402,
-    "success" => false,
-    "error" => "Acceso no autorizado",
-    "mensaje" => "Haz intentado a acceder a una ruta protegida, Inicie sesion y vuelva a intentarlo"
-  ]);
 }

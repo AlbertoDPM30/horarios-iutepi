@@ -1,129 +1,109 @@
 <?php
-// Protegemos la ruta
-if(isset($_SESSION["logged"]) == "ok") {
 
-  /*=============================================
-  OBTENER PROFESOR(ES) (POST || GET)
-  =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdProfesor'])) {
+/*=============================================
+ENDPOINT DE PROFESORES
+=============================================*/
+if (isset($_GET["ruta"]) && $_GET["ruta"] === "profesores") {
 
-    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+    header('Content-Type: application/json; charset=utf-8');
 
-    // Si se quiere obtener un solo profesor se le da valor a los parametros
-    $item = "teacher_id"; // Columna de la DB
-    $valor = $_POST['obtenerIdProfesor']; // ID del profesor que se quiere obtener
+    switch ($_SERVER['REQUEST_METHOD']) {
+        case 'GET':
+            /*=============================================
+            OBTENER PROFESOR(ES)
+            =============================================*/
+            $item = null;
+            $valor = null;
 
-    // Enviar los datos al controlador para obtener el profesor
-    $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
+            if (isset($_GET['id'])) {
+                // Obtener un profesor por su ID
+                $item = "teacher_id";
+                $valor = $_GET['id'];
+            } elseif (isset($_GET['ci'])) {
+                // Obtener un profesor por la cédula o codigo
+                $item = "ci_code";
+                $valor = $_GET['ci'];
+            }
 
-    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
+            $response = ControladorProfesores::ctrMostrarProfesores($item, $valor);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
 
-  } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdProfesor'])) {
+        case 'POST':
+            /*=============================================
+            REGISTRAR NUEVO PROFESOR
+            =============================================*/
+            $datos = json_decode(file_get_contents('php://input'), true);
 
-    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+            // Validar campos requeridos
+            if (empty($datos['name']) || empty($datos['ci_code'])) {
+                echo json_encode([
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "Los campos 'name' y 'ci_code' son obligatorios."
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                break;
+            }
 
-    $item = null;
-    $valor = null;
+            // Validar si la CI existe
+            $cedulaProfesorExistente = ControladorProfesores::ctrMostrarProfesores("ci_code", $datos['ci_code']);
+            if ($cedulaProfesorExistente['success'] !== true && !empty($cedulaProfesorExistente['data'])) {
+                echo json_encode([
+                    "status" => 409,
+                    "success" => false,
+                    "message" => "Esta Cédula de Identidad ya se encuentra registrada para otro profesor."
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                break;
+            }
+            
+            $response = ControladorProfesores::ctrCrearProfesor($datos); // Enviar datos al controlador
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
 
-    // Enviar los datos al controlador para obtener los profesores
-    $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
+        case 'PUT':
+            /*=============================================
+            EDITAR PROFESOR
+            =============================================*/
+            $datos = json_decode(file_get_contents('php://input'), true);
 
-    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
+            if (empty($datos['teacher_id'])) {
+                echo json_encode([
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "El 'teacher_id' es obligatorio para actualizar un profesor."
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                break;
+            }
 
-  } else {
+            $response = ControladorProfesores::ctrEditarProfesor($datos); // Enviar datos al controlador
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
 
-    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+        case 'DELETE':
+            /*=============================================
+            ELIMINAR PROFESOR
+            =============================================*/
+            if (!isset($_GET['id'])) {
+                echo json_encode([
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "El 'id' del profesor es obligatorio para eliminar."
+                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+                break;
+            }
 
-    json_encode([
-      "status" => 401,
-      "success" => false,
-      "error" => "Parametros o datos incorrectos"
-    ]);
-  }
+            $response = ControladorProfesores::ctrEliminarProfesor($_GET['id']); // Enviar ID al controlador
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
 
-  /*=============================================
-  REGISTRAR NUEVO PROFESOR (POST)
-  =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["nuevoNombreProfesor"])) {
-
-    // Validar que los campos no estén vacíos
-    if (empty($_POST["nuevoNombreProfesor"]) || empty($_POST["nuevoCIProfesor"])) {
-
-      echo json_encode(["mensaje" => "Todos los campos son obligatorios."]);
-      exit;
+        default:
+            // Método no permitido
+            http_response_code(405);
+            echo json_encode([
+                "status" => 405,
+                "success" => false,
+                "message" => "Método no permitido para esta ruta."
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
     }
-    
-    $item = "name";
-    $valor = $_POST["nuevoNombreProfesor"];
-
-    // Enviar los datos al controlador para obtener los profesores
-    $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
-    
-    if ($respuesta) {
-
-      // Si ya existe una materia con ese nombre, retornará un error
-      http_response_code(400);
-      echo json_encode([
-        "status" => 400,
-        "success" => false,
-        "aviso" => "Este Profesor ya se encuentra registrado"
-      ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-      exit;
-    }
-
-    // Mostramos los datos desde el controlador del profesor creado
-    echo ControladorProfesores::ctrCrearProfesor();
-
-  }
-
-  /*=============================================
-  EDITAR PROFESOR (POST)
-  =============================================*/
-  if($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["editarIdProfesor"])) {
-
-    // Se muestran los datos recibidos del controlador
-    echo ControladorProfesores::ctrEditarProfesor();
-  }
-
-  /*=============================================
-  VALIDAR NO REPETIR PROFESOR
-  =============================================*/
-
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["validarCIProfesor"])) {
-
-    $item = "ci_code"; // Columna de la DB
-    $valor = $_POST['validarCIProfesor']; // ci a validar
-
-    // Enviar los datos al controlador para obtener el profesor
-    $respuesta = ControladorProfesores::ctrMostrarProfesores($item, $valor);
-
-    // Enviamos la respuesta al cliente si ya existe esa ci
-    if ($respuesta) {
-      
-      echo json_encode([
-        "status" => 200,
-        "success" => true,
-        "aviso" => "Esta CI ya se encuentra registrada"
-      ]);
-    }
-
-  }
-
-  /*=============================================
-  ELMINAR PROFESOR
-  =============================================*/
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["EliminarIdProfesor"])) {
-
-    echo ControladorProfesores::ctrEliminarProfesor();
-  }
-
-} else {
-
-  // Si NO hay una sesion iniciada, mostrará un error
-  echo json_encode([
-    "status" => 402,
-    "success" => false,
-    "error" => "Acceso no autorizado",
-    "mensaje" => "Haz intentado a acceder a una ruta protegida, Inicie sesion y vuelva a intentarlo"
-  ]);
 }

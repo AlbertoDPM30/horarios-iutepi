@@ -2,176 +2,167 @@
 
 require_once "conexion.php";
 
-class ModeloUsuarios{
+class ModeloUsuarios {
 
-	/*=============================================
-	MOSTRAR USUARIOS (GET)
-	=============================================*/
+    /*=============================================
+    MOSTRAR USUARIOS (GET)
+    =============================================*/
+    static public function mdlMostrarUsuarios($tabla, $item, $valor) {
+        try {
+            if ($item != null) {
+                // Obtener un usuario específico
+                $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :valor");
+                $stmt->bindParam(":valor", $valor, PDO::PARAM_STR);
+            } else {
+                // Obtener todos los usuarios
+                $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla ORDER BY first_name ASC");
+            }
 
-	static public function mdlMostrarUsuarios($tabla, $item, $valor){
+            $stmt->execute();
 
-		// GET un solo usuario
+            if ($item != null) {
+                return $stmt->fetch(PDO::FETCH_ASSOC); 
+            } else {
+                return $stmt->fetchAll(PDO::FETCH_ASSOC); 
+            }
 
-		if($item != null){
+        } catch (PDOException $e) {
+            error_log("Error en mdlMostrarUsuarios: " . $e->getMessage());
+            return false; // Retorna false en caso de error
+        } finally {
+            if ($stmt) {
+                $stmt = null; // Asegura que el statement se cierre
+            }
+        }
+    }
 
-			// Preparar la consulta SQL para obtener un usuario específico
+    /*=============================================
+    REGISTRO DE USUARIO (POST)
+    =============================================*/
+    static public function mdlCrearUsuario($tabla, $datos) {
+        try {
+            // Consulta SQL para insertar un nuevo usuario
+            $stmt = Conexion::conectar()->prepare(
+                "INSERT INTO 
+                $tabla (first_name, last_name, ci, username, password) 
+                VALUES (:first_name, :last_name, :ci, :username, :password)"
+            );
 
-			$stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :$item");
+            // Vincular los parámetros
+            $stmt->bindParam(":first_name", $datos["nombres"], PDO::PARAM_STR);
+            $stmt->bindParam(":last_name", $datos["apellidos"], PDO::PARAM_STR);
+            $stmt->bindParam(":ci", $datos["ci"], PDO::PARAM_STR);
+            $stmt->bindParam(":username", $datos["username"], PDO::PARAM_STR);
+            $stmt->bindParam(":password", $datos["password"], PDO::PARAM_STR);
 
-			$stmt -> bindParam(":".$item, $valor, PDO::PARAM_STR);
+            // Ejecutar la consulta SQL
+            if ($stmt->execute()) {
+                return "ok"; // Retornar 'ok' si la inserción fue exitosa
+            } else {
+                error_log("Error al crear usuario: " . implode(" ", $stmt->errorInfo()));
+                return "error"; // Retornar 'error' si hubo un problema
+            }
 
-			$stmt -> execute();
+        } catch (PDOException $e) {
+            error_log("Error en mdlCrearUsuario: " . $e->getMessage());
+            return "error"; // Retornar 'error' en caso de excepción
+            // return "error"; // Retornar 'error' en caso de excepción
+        } finally {
+            if ($stmt) {
+                $stmt = null; // Cerrar la conexión y liberar recursos
+            }
+        }
+    }
 
-			return $stmt -> fetch(); // Retorna un solo usuario si se encuentra
+    /*=============================================
+    ACTUALIZAR USUARIO (PUT)
+    =============================================*/
+    static public function mdlEditarUsuario($tabla, $datos) {
+        try {
 
-		}else{
+            // Agregar "user_id" si no está presente
+            if (!isset($datos['user_id'])) {
+                error_log("Error en mdlEditarUsuario: 'user_id' no está presente en los datos.");
+                return "error_no_user_id";
+            }
 
-			// GET todos los usuarios
-			// Preparar la consulta SQL para obtener todos los usuarios
+            // Iniciar la construcción de la cláusula SET
+            $setClauses = [];
+            $bindParams = [];
+            
+            // Añadir los campos que vienen en $datos (excluyendo user_id)
+            foreach ($datos as $key => $value) {
+                if ($key !== 'user_id') {
+                    $setClauses[] = "$key = :$key";
+                    $bindParams[":$key"] = $value;
+                }
+            }
 
-			$stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
+            // Si no hay campos para actualizar además del ID y updated_at, salir.
+            if (empty($setClauses) && !isset($datos['updated_at'])) {
+                return "no_data";
+            }
 
-			$stmt -> execute();
+           // Construir la consulta SQL
+            $sql = "UPDATE $tabla SET " . implode(", ", $setClauses) . " WHERE user_id = :user_id";
+            $stmt = Conexion::conectar()->prepare($sql);
 
-			return $stmt -> fetchAll(); // Retorna todos los usuarios si no se especifica un item
+            // Vincular los parámetros dinámicamente
+            foreach ($bindParams as $param => $value) {
+                $paramType = PDO::PARAM_STR;
+                if (is_int($value)) {
+                    $paramType = PDO::PARAM_INT;
+                } elseif (is_bool($value)) {
+                    $paramType = PDO::PARAM_BOOL;
+                } elseif (is_null($value)) {
+                    $paramType = PDO::PARAM_NULL;
+                }
+                $stmt->bindValue($param, $value, $paramType);
+            }
 
-		}
+            // Vincular 'user_id' 
+            $stmt->bindValue(":user_id", $datos['user_id'], PDO::PARAM_INT);
+            
+            if ($stmt->execute()) {
+                return "ok";
+            } else {
+                error_log("Error al actualizar usuario: " . implode(" ", $stmt->errorInfo()));
+                return "error";
+            }
 
-		$stmt -> close();
+        } catch (PDOException $e) {
+            error_log("Error en mdlEditarUsuario: " . $e->getMessage());
+            return "error";
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
 
-		$stmt = null;
+    /*=============================================
+    ELIMINAR USUARIO (DELETE)
+    =============================================*/
+    static public function mdlEliminarUsuario($tabla, $id) {
+        try {
+            $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE user_id = :user_id");
+            $stmt->bindParam(":user_id", $id, PDO::PARAM_INT);
 
-	}
+            if ($stmt->execute()) {
+                return "ok";
+            } else {
+                error_log("Error al eliminar usuario: " . implode(" ", $stmt->errorInfo()));
+                return "error";
+            }
 
-	/*=============================================
-	REGISTRO DE USUARIO (POST)
-	=============================================*/
-
-	static public function mdlIngresarUsuario($tabla, $datos){
-
-		// Preparar la consulta SQL para insertar un nuevo usuario
-
-		$stmt = Conexion::conectar()->prepare("INSERT INTO 		$tabla	(first_name,
-																		last_name,
-																		ci,
-																		username,
-																		password) 
-																VALUES 	(:first_name,
-																		:last_name,
-																		:ci,
-																		:username,
-																		:password)");
-
-		$stmt->bindParam(":first_name", $datos["first_name"], PDO::PARAM_STR); // Vincular el parámetro first_name
-		$stmt->bindParam(":last_name", $datos["last_name"], PDO::PARAM_STR); // Vincular el parámetro last_name
-		$stmt->bindParam(":ci", $datos["ci"], PDO::PARAM_STR); // Vincular el parámetro ci
-		$stmt->bindParam(":username", $datos["username"], PDO::PARAM_STR); // Vincular el parámetro username
-		$stmt->bindParam(":password", $datos["password"], PDO::PARAM_STR); // Vincular el parámetro password
-
-		// Ejecutar la consulta SQL
-		if($stmt->execute()){
-
-			return "ok"; // Retornar 'ok' si la inserción fue exitosa
-
-		}else{
-
-			return "error"; // Retornar 'error' si hubo un problema al insertar el usuario
-		
-		}
-
-		// Cerrar la conexión y liberar recursos
-		$stmt->close();
-		
-		$stmt = null;
-
-	}
-
-	/*=============================================
-	EDITAR USUARIO (PUT)
-	=============================================*/
-
-	static public function mdlEditarUsuario($tabla, $datos){
-	
-		$stmt = Conexion::conectar()->prepare("UPDATE $tabla 	SET 	first_name 	= :first_name,
-																		last_name 	= :last_name, 
-																		ci 			= :ci,
-																		updated_at	= :updated_at
-																WHERE 	user_id 	= :user_id");
-
-		$stmt->bindParam(":user_id", $datos["user_id"], PDO::PARAM_INT);
-		$stmt->bindParam(":first_name", $datos["first_name"], PDO::PARAM_STR);
-		$stmt->bindParam(":last_name", $datos["last_name"], PDO::PARAM_STR);
-		$stmt->bindParam(":ci", $datos["ci"], PDO::PARAM_STR);
-		$stmt->bindParam(":updated_at", $datos["updated_at"], PDO::PARAM_STR);
-
-		if($stmt -> execute()){
-
-			return "ok";
-		
-		}else{
-
-			return "error";	
-
-		}
-
-		$stmt -> close();
-
-		$stmt = null;
-
-	}
-
-	/*=============================================
-	BORRAR USUARIO (DELETE)
-	=============================================*/
-
-	static public function mdlEliminarUsuario($tabla, $datos){
-
-		$stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE user_id = :user_id");
-
-		$stmt -> bindParam(":user_id", $datos, PDO::PARAM_INT);
-
-		if($stmt -> execute()){
-
-			return "ok";
-		
-		}else{
-
-			return "error";	
-
-		}
-
-		$stmt -> close();
-
-		$stmt = null;
-
-
-	}
-
-	/*=============================================
-	ACTUALIZAR USUARIO (PUT)
-	=============================================*/
-
-	static public function mdlActualizarUsuario($tabla, $item1, $valor1, $item2, $valor2){
-
-		$stmt = Conexion::conectar()->prepare("UPDATE $tabla SET $item1 = :$item1 WHERE $item2 = :$item2");
-
-		$stmt -> bindParam(":".$item1, $valor1, PDO::PARAM_STR);
-		$stmt -> bindParam(":".$item2, $valor2, PDO::PARAM_STR);
-
-		if($stmt -> execute()){
-
-			return "ok";
-		
-		}else{
-
-			return "error";	
-
-		}
-
-		$stmt -> close();
-
-		$stmt = null;
-
-	}
+        } catch (PDOException $e) {
+            error_log("Error en mdlEliminarUsuario: " . $e->getMessage());
+            return "error";
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
 
 }
