@@ -1,162 +1,173 @@
 <?php
 
-class ControladorProfesores
-{
+class ControladorProfesores {
 
-	/*=============================================
-	MOSTRAR PROFESORES
-	=============================================*/
+    /*=============================================
+    MOSTRAR PROFESOR(ES) (GET)
+    =============================================*/
+    static public function ctrMostrarProfesores($item = null, $valor = null) {
+        try {
+            $respuesta = ModeloProfesores::mdlMostrarProfesores("teachers", $item, $valor);
+            
+            if ($item !== null && $valor !== null && !$respuesta) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Profesor no encontrado."
+                ];
+            }
 
-	static public function ctrMostrarProfesores($item, $valor)
-	{
+            return [
+                "status" => 200,
+                "success" => true,
+                "data" => $respuesta
+            ];
+            
+        } catch (Exception $e) {
+            error_log("Error en ctrMostrarProfesores: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Ocurrió un error al procesar la solicitud."
+            ];
+        }
+    }
 
-		$tabla = "teachers"; // Definimos la tabla de la DB
+    /*=============================================
+    CREAR PROFESOR (POST)
+    =============================================*/
+    static public function ctrCrearProfesor($datos) { 
+        try {
 
-		$respuesta = ModeloProfesores::MdlMostrarProfesores($tabla, $item, $valor);
+            $datosModelo = [
+                'name' => $datos['name'],
+                'ci_code' => $datos['ci_code'],
+                'phone_number' => $datos['phone_number'] ?? null, 
+                'email' => $datos['email'] ?? null 
+            ];
 
-		return $respuesta;
-	}
+            $respuesta = ModeloProfesores::mdlCrearProfesor("teachers", $datosModelo);
 
-	/*=============================================
-	REGISTRAR PROFESOR
-	=============================================*/
+            if ($respuesta === "ok") {
+                return [
+                    "status" => 201, 
+                    "success" => true,
+                    "message" => "Profesor creado exitosamente."
+                ];
+            } else {
+                error_log("Error en ModeloProfesores::mdlCrearProfesor: " . $respuesta);
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "No se pudo crear el profesor. Inténtalo de nuevo."
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("Error en ctrCrearProfesor: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Ocurrió un error inesperado al procesar la solicitud."
+            ];
+        }
+    }
 
-	static public function ctrCrearProfesor()
-	{
+    /*=============================================
+    EDITAR PROFESOR (PUT)
+    =============================================*/
+    static public function ctrEditarProfesor($datos) { 
+        try {
+            $teacherIdToUpdate = $datos['teacher_id']; 
 
-		if (isset($_POST["nuevoNombreProfesor"])) {
+            // Validar si el profesor existe antes de editar
+            $teacherExists = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $teacherIdToUpdate);
+            if (!$teacherExists['success'] || !$teacherExists['data']) { 
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Profesor no encontrado para actualizar."
+                ];
+            }
 
-			header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+            // Preparar datos para el modelo
+            $datosModelo = [
+                'teacher_id' => $teacherIdToUpdate
+            ];
+            if (isset($datos['name'])) $datosModelo['name'] = $datos['name'];
+            if (isset($datos['ci_code'])) $datosModelo['ci_code'] = $datos['ci_code'];
+            if (isset($datos['phone_number'])) $datosModelo['phone_number'] = $datos['phone_number'];
+            if (isset($datos['email'])) $datosModelo['email'] = $datos['email'];
 
-			$tabla = "teachers"; // Tabla de profesores en la base de datos
+            $respuesta = ModeloProfesores::mdlEditarProfesor("teachers", $datosModelo);
 
-			// Crear un array con los datos del nuevo profesor
-			$datos = array(
-			"name" => trim($_POST["nuevoNombreProfesor"]),
-			"ci_code" => trim($_POST["nuevoCIProfesor"])
-			);
+            if ($respuesta === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Profesor actualizado correctamente."
+                ];
+            } else if ($respuesta === "no_changes") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Profesor actualizado correctamente, aunque no se detectaron cambios en los datos enviados (ID válido)."
+                ];
+            } else {
+                error_log("Error en ModeloProfesores::mdlEditarProfesor: " . $respuesta);
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "No se pudo actualizar el profesor. Inténtalo de nuevo."
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("Error en ctrEditarProfesor: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Ocurrió un error inesperado al procesar la solicitud."
+            ];
+        }
+    }
 
-			$respuesta = ModeloProfesores::mdlCrearProfesor($tabla, $datos);
+    /*=============================================
+    ELIMINAR PROFESOR (DELETE)
+    =============================================*/
+    static public function ctrEliminarProfesor($teacher_id) { 
+        try {
+            // Validar si el profesor existe antes de eliminar
+            $teacherExists = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $teacher_id);
+            if (!$teacherExists['success'] || !$teacherExists['data']) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Profesor no encontrado para eliminar."
+                ];
+            }
 
-			// Verificar la respuesta del controlador
-			if ($respuesta == "ok") {
+            $respuesta = ModeloProfesores::mdlEliminarProfesor("teachers", $teacher_id);
 
-				// Si es correcta mostrará los datos del profesor recien registrado
-				http_response_code(201);
-				return json_encode([
-					"status" => 201,
-					"success" => true,
-					"data" => [
-					"nombres" => $datos["name"],
-					"cedula_codigo" => $datos["ci_code"]
-					],
-					"mensaje" => "profesor creado correctamente"
-				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-			} else {
-
-				// Si algo falla retornará un status 500
-				http_response_code(500);
-				return json_encode([
-					"status" => 500,
-					"success" => false,
-					"data" => null,
-					"mensaje" => "error al crear el nuevo profesor"
-				], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-			}
-
-		}
-	}
-
-	/*=============================================
-	EDITAR PROFESOR
-	=============================================*/
-
-	static public function ctrEditarProfesor()
-	{
-
-		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
-
-		$tabla = "teachers";
-
-		date_default_timezone_set('America/Caracas');
-
-		$fechaActualizacion = date('Y-m-d H:i:s');
-		
-		// Crear un array con los datos del Profesor a editar
-		$datos = array(
-			"teacher_id" => $_POST["editarIdProfesor"],
-			"name" => trim($_POST["editarNombreProfesor"]),
-			"ci_code" => trim($_POST["editarCIProfesor"]),
-			"updated_at" => $fechaActualizacion
-		);
-
-		$respuesta = ModeloProfesores::mdlEditarProfesor($tabla, $datos);
-
-		//Recibimos la respuesta
-		if ($respuesta == "ok") {
-
-			// Retornamos la respuesta con los datos del profesor actualizado
-			http_response_code(201);
-			return json_encode([
-				"status" => 201,
-				"success" => true,
-				"data" => [
-				"id" => $datos["teacher_id"],
-				"nombres" => $datos["name"],
-				"ci" => $datos["ci_code"],
-				"fecha_actualizacion" => $datos["updated_at"]
-				],
-				"mensaje" => "Profesor actualizado correctamente"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-		} else {
-		
-			http_response_code(500);
-			return json_encode([
-				"status" => 500,
-				"success" => false,
-				"Error" => "No se pudo actualizar el profesor",
-				"mensaje" => "Ha ocurrido un problema al intentar actualizar este profesor, Contacte con un Administrador"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-		}
-
-	}
-
-	/*=============================================
-	ELIMINAR PROFESOR
-	=============================================*/
-
-	static public function ctrEliminarProfesor(){
-
-		header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
-
-		$tabla ="teachers";
-
-		$datos = $_POST["EliminarIdProfesor"]; // Recibir el id del profesor a eliminar
-
-		$respuesta = ModeloProfesores::mdlEliminarProfesor($tabla, $datos);
-
-		// Verificamos la respuesta del modelo
-		if ($respuesta == "ok") {
-
-			// Si la respuesta es correcta, retornamos un status 200 y un mensaje de éxito
-			http_response_code(200);
-			return json_encode([
-				"status" => 200,
-				"success" => true,
-				"mensaje" => "Profesor eliminado con exito"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-		} else {
-
-			// Si la respuesta es incorrecta, retornamos un status 500 y un mensaje de error
-			http_response_code(500);
-			return json_encode([
-				"status" => 500,
-				"success" => false,
-				"error" => "Profesor NO eliminado",
-				"mensaje" => "Ha ocurrido un problema al intentar eliminar este Profesor, Contacte con un Administrador"
-			], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-		}
-
-	}
-
+            if ($respuesta === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Profesor eliminado correctamente."
+                ];
+            } else {
+                error_log("Error en ModeloProfesores::mdlEliminarProfesor: " . $respuesta);
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "No se pudo eliminar el profesor. Inténtalo de nuevo."
+                ];
+            }
+        } catch (Exception $e) {
+            error_log("Error en ctrEliminarProfesor: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Ocurrió un error inesperado al procesar la solicitud."
+            ];
+        }
+    }
 }

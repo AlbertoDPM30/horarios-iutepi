@@ -2,147 +2,140 @@
 
 require_once "conexion.php";
 
-class ModeloMaterias{
+class ModeloMaterias {
 
-	/*=============================================
-	MOSTRAR MATERIA (GET)
-	=============================================*/
+    /*=============================================
+    MOSTRAR MATERIA(S) (GET)
+    =============================================*/
+    static public function mdlMostrarMaterias($tabla, $item, $valor) {
+        if ($item != null) {
+            $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :$item");
+            $stmt->bindParam(":" . $item, $valor, PDO::PARAM_STR);
+            $stmt->execute();
+            return $stmt->fetch(PDO::FETCH_ASSOC); // Obtener un solo registro
+        } else {
+            $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
+            $stmt->execute();
+            return $stmt->fetchAll(PDO::FETCH_ASSOC); // Obtener todos los registros
+        }
+        $stmt = null;
+    }
 
-	static public function mdlMostrarMaterias($tabla, $item, $valor){
+    /*=============================================
+    CREAR MATERIA (POST)
+    =============================================*/
+    static public function mdlCrearMateria($tabla, $datos) {
+        try {
+            $stmt = Conexion::conectar()->prepare(
+                "INSERT INTO $tabla (name, duration_hours, semester) 
+                VALUES (:name, :duration_hours, :semester)"
+            );
 
-		// GET una sola materia
+            $stmt->bindParam(":name", $datos["name"], PDO::PARAM_STR);
+            $stmt->bindParam(":duration_hours", $datos["duration_hours"], PDO::PARAM_INT); 
+            $stmt->bindParam(":semester", $datos["semester"], PDO::PARAM_INT); 
 
-		if($item != null){
+            if ($stmt->execute()) {
+                return "ok";
+            } else {
+                error_log("Error al crear materia en BD: " . implode(" - ", $stmt->errorInfo()));
+                return "error";
+            }
+        } catch (PDOException $e) {
+            error_log("Excepción en mdlCrearMateria: " . $e->getMessage());
+            return $e->getMessage();
+        } finally {
+            $stmt = null;
+        }
+    }
 
-			// Preparar la consulta SQL para obtener una materia en específico
+    /*=============================================
+    EDITAR MATERIA (PUT / PATCH)
+    =============================================*/
+    static public function mdlEditarMateria($tabla, $datos) {
+        try {
+            if (!isset($datos['subject_id'])) {
+                return "error_no_id";
+            }
 
-			$stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :$item");
+            $setClauses = [];
+            $bindParams = [];
 
-			$stmt -> bindParam(":".$item, $valor, PDO::PARAM_STR);
+            if (isset($datos['name'])) {
+                $setClauses[] = "name = :name";
+                $bindParams[":name"] = $datos['name'];
+            }
+            if (isset($datos['duration_hours'])) {
+                $setClauses[] = "duration_hours = :duration_hours";
+                $bindParams[":duration_hours"] = $datos['duration_hours'];
+            }
+            if (isset($datos['semester'])) {
+                $setClauses[] = "semester = :semester";
+                $bindParams[":semester"] = $datos['semester'];
+            }
 
-			$stmt -> execute();
+            // Establecer la zona horaria y obtener la fecha actual para updated_at
+            date_default_timezone_set('America/Caracas');
+            $current_datetime = date('Y-m-d H:i:s');
+            $setClauses[] = "updated_at = :updated_at"; 
+            $bindParams[":updated_at"] = $current_datetime; 
 
-			return $stmt -> fetch(); // Retorna un solo materia si se encuentra
+            //Si $datos está vacio
+            if (empty($setClauses)) {
+                return "no_data_to_update"; 
+            }
 
-		}else{
+            // Definir y ejecutar consulta SQL
+            $sql = "UPDATE $tabla SET " . implode(", ", $setClauses) . " WHERE subject_id = :subject_id";
+            $stmt = Conexion::conectar()->prepare($sql);
 
-			// GET todas las materias
-			// Preparar la consulta SQL para obtener todas las materias
+            foreach ($bindParams as $param => $value) {
+                $paramType = PDO::PARAM_STR;
+                if (is_int($value)) {
+                    $paramType = PDO::PARAM_INT;
+                } elseif (is_bool($value)) {
+                    $paramType = PDO::PARAM_BOOL;
+                } elseif (is_null($value)) {
+                    $paramType = PDO::PARAM_NULL;
+                }
+                $stmt->bindValue($param, $value, $paramType);
+            }
+            
+            $stmt->bindValue(":subject_id", $datos['subject_id'], PDO::PARAM_INT);
 
-			$stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
+            if ($stmt->execute()) {
+                return "ok";
+            } else {
+                error_log("Error al editar materia en BD: " . implode(" - ", $stmt->errorInfo()));
+                return "error";
+            }
+        } catch (PDOException $e) {
+            error_log("Excepción en mdlEditarMateria: " . $e->getMessage());
+            return $e->getMessage();
+        } finally {
+            $stmt = null;
+        }
+    }
 
-			$stmt -> execute();
+    /*=============================================
+    ELIMINAR MATERIA (DELETE)
+    =============================================*/
+    static public function mdlEliminarMateria($tabla, $id_materia) {
+        try {
+            $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE subject_id = :subject_id");
+            $stmt->bindParam(":subject_id", $id_materia, PDO::PARAM_INT);
 
-			return $stmt -> fetchAll(); // Retorna todas las materia si no se especifica un item
-
-		}
-
-		$stmt -> close();
-
-		$stmt = null;
-
-	}
-
-	/*=============================================
-	REGISTRO DE MATERIA (POST)
-	=============================================*/
-
-	static public function mdlCrearMateria($tabla, $datos){
-
-		// Preparar la consulta SQL para insertar una nueva materia
-
-		$stmt = Conexion::conectar()->prepare("INSERT INTO 	$tabla
-															(name,
-															duration_hours,
-															semester,
-															is_assigned)
-													VALUES 	(:name,
-															:duration_hours,
-															:semester,
-															:is_assigned)");
-
-		$stmt->bindParam(":name", $datos["name"], PDO::PARAM_STR); // Vincular el parámetro name
-		$stmt->bindParam(":duration_hours", $datos["duration_hours"], PDO::PARAM_STR); // Vincular el parámetro duration_hours
-		$stmt->bindParam(":semester", $datos["semester"], PDO::PARAM_STR); // Vincular el parámetro semester
-		$stmt->bindParam(":is_assigned", $datos["is_assigned"], PDO::PARAM_INT); // Vincular el parámetro is_assigned
-
-		// Ejecutar la consulta SQL
-		if($stmt->execute()){
-
-			return "ok"; // Retornar 'ok' si la inserción fue exitosa
-
-		}else{
-
-			return "error"; // Retornar 'error' si hubo un problema al insertar la materia
-		
-		}
-
-		// Cerrar la conexión y liberar recursos
-		$stmt->close();
-		
-		$stmt = null;
-
-	}
-
-	/*=============================================
-	EDITAR MATERIA (PUT)
-	=============================================*/
-
-	static public function mdlEditarMateria($tabla, $datos){
-	
-		$stmt = Conexion::conectar()->prepare("UPDATE $tabla 	SET 	name 			= :name,
-																		duration_hours 	= :duration_hours,
-																		semester 		= :semester,
-																		is_assigned 	= :is_assigned
-																WHERE 	subject_id 		= :subject_id");
-
-		$stmt->bindParam(":subject_id", $datos["subject_id"], PDO::PARAM_INT);
-		$stmt->bindParam(":name", $datos["name"], PDO::PARAM_STR);
-		$stmt->bindParam(":duration_hours", $datos["duration_hours"], PDO::PARAM_STR);
-		$stmt->bindParam(":semester", $datos["semester"], PDO::PARAM_STR);
-		$stmt->bindParam(":is_assigned", $datos["is_assigned"], PDO::PARAM_INT);
-
-		if($stmt -> execute()){
-
-			return "ok";
-		
-		}else{
-
-			return "error";	
-
-		}
-
-		$stmt -> close();
-
-		$stmt = null;
-
-	}
-
-	/*=============================================
-	BORRAR MATERIA (DELETE)
-	=============================================*/
-
-	static public function mdlEliminarMateria($tabla, $datos){
-
-		$stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE subject_id = :subject_id");
-
-		$stmt -> bindParam(":subject_id", $datos, PDO::PARAM_INT);
-
-		if($stmt -> execute()){
-
-			return "ok";
-		
-		}else{
-
-			return "error";	
-
-		}
-
-		$stmt -> close();
-
-		$stmt = null;
-
-
-	}
-
+            if ($stmt->execute()) {
+                return "ok";
+            } else {
+                error_log("Error al eliminar materia en BD: " . implode(" - ", $stmt->errorInfo()));
+                return "error";
+            }
+        } catch (PDOException $e) {
+            error_log("Excepción en mdlEliminarMateria: " . $e->getMessage());
+            return $e->getMessage();
+        } finally {
+            $stmt = null;
+        }
+    }
 }

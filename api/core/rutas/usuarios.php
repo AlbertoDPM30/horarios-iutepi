@@ -1,120 +1,105 @@
 <?php
-// Protegemos la ruta
-if(isset($_SESSION["logged"]) == "ok") {
 
-  /*=============================================
-  OBTENER USUARIO(S) (POST || GET)
-  =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['obtenerIdUsuario'])) {
+// Configurar cabeceras para respuestas JSON
+header('Content-Type: application/json; charset=utf-8');
 
-    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+// Obtener método HTTP
+$metodo = $_SERVER['REQUEST_METHOD'];
 
-    // Si se quiere obtener un solo usuario se le da valor a los parametros
-    $item = "user_id"; // Columna de la DB
-    $valor = $_POST['obtenerIdUsuario']; // ID del usuario que se quiere obtener
+// Procesar datos de entrada (JSON)
+$entrada = json_decode(file_get_contents('php://input'), true);
 
-    // Enviar los datos al controlador para obtener el usuario
-    $respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
+// ID del usuario autenticado:
+$idUsuarioAutenticado = $GLOBALS['user_id'] ?? null; 
 
-    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
+/*=========================================
+MANEJO DE MÉTODOS HTTP PARA /usuarios
+==========================================*/
+switch ($metodo) {
 
-  } elseif ($_SERVER['REQUEST_METHOD'] === 'GET' && !isset($_POST['obtenerIdUsuario'])) {
+    /*=========================================
+    OBTENER USUARIO(S)
+    ==========================================*/
+    case 'GET':
+        $id = isset($_GET['id']) ? $_GET['id'] : null;
+        $respuesta = ControladorUsuarios::ctrMostrarUsuarios($id ? "user_id" : null, $id);
+        http_response_code($respuesta['status']);
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
 
-    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
+    /*=========================================
+    REGISTRAR USUARIO
+    ==========================================*/
+    case 'POST':
+        if (empty($entrada['nombres']) || empty($entrada['apellidos']) || empty($entrada['ci']) || empty($entrada['password']) || empty($entrada['username'])) {
+            echo json_encode(["mensaje" => "Todos los campos son obligatorios"], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            exit;
+        }
 
-    $item = null;
-    $valor = null;
+        $respuesta = ControladorUsuarios::ctrCrearUsuario($entrada);
+        http_response_code($respuesta['status']);
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
 
-    // Enviar los datos al controlador para obtener los usuarios
-    $respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
+    /*=========================================
+    EDITAR USUARIO
+    ==========================================*/
+    case 'PUT':
+        $respuesta = ControladorUsuarios::ctrEditarUsuario($entrada);
+        http_response_code($respuesta['status']);
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
 
-    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT); // Enviamos la respuesta al cliente
-
-  } else {
-
-    header('Content-Type: application/json; charset=utf-8'); //  Establecer cabeceras para JSON + UTF-8
-
-    json_encode([
-      "status" => 401,
-      "success" => false,
-      "error" => "Parametros o datos incorrectos"
-    ]);
-  }
-
-  /*=============================================
-  REGISTRAR NUEVO USUARIO (POST)
-  =============================================*/
-  if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["nuevoUsername"])) {
-
-    // Validar que los campos no estén vacíos
-    if (empty($_POST["nuevoNombres"]) || empty($_POST["nuevoApellidos"]) || empty($_POST["nuevoCI"]) || empty($_POST["nuevoUsername"]) || empty($_POST["nuevoPassword"])) {
-
-      echo json_encode(["mensaje" => "Todos los campos son obligatorios."]);
-      exit;
-    }
+    /*=========================================
+    ELIMINAR USUARIO
+    ==========================================*/
+    case 'DELETE':
+        $id = isset($_GET['id']) ? $_GET['id'] : null;
+        if (!$id) {
+            http_response_code(400);
+            echo json_encode([
+                "status" => 400,
+                "success" => false,
+                "message" => "Se requiere el ID para eliminar un usuario."
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
+        }
+        $respuesta = ControladorUsuarios::ctrEliminarUsuario($id);
+        http_response_code($respuesta['status']);
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
     
-    // Mostramos los datos desde el controlador del usuario creado
-    echo ControladorUsuarios::ctrCrearUsuario();
+    /*=========================================
+    ACTUALIZAR USUARIO
+    ==========================================*/
+    case 'PATCH':
+        $id = $entrada['id'] ?? null;
+        $status = $entrada['status'] ?? null;
 
-  }
+        if ($id === null || $status === null) {
+            http_response_code(400);
+            echo json_encode([
+                "status" => 400,
+                "success" => false,
+                "message" => "Se requiere 'id' y 'status' para actualizar el estado del usuario."
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            break;
+        }
 
-  /*=============================================
-  EDITAR USUARIO (POST)
-  =============================================*/
-  if($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["editarIdUsuario"])) {
+        $respuesta = ControladorUsuarios::ctrActualizarStatusUsuario($id, $status);
+        http_response_code($respuesta['status']);
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
 
-    // Se muestran los datos recibidos del controlador
-    echo ControladorUsuarios::ctrEditarUsuario();
-  }
-
-  /*=============================================
-  ACTUALIZAR STATUS USUARIO (POST)
-  =============================================*/
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["actualizarIdUsuario"]) && isset($_POST["actualizarStatus"])) {
-
-    // Se muestran los datos recibidos del controlador
-    echo ControladorUsuarios::ctrActualizarStatusUsuario();
-  }
-
-  /*=============================================
-  VALIDAR NO REPETIR USUARIO
-  =============================================*/
-
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["validarUsuario"])) {
-
-    $item = "username"; // Columna de la DB
-    $valor = $_POST['validarUsuario']; // username a validar
-
-    // Enviar los datos al controlador para obtener el usuario
-    $respuesta = ControladorUsuarios::ctrMostrarUsuarios($item, $valor);
-
-    // Enviamos la respuesta al cliente si ya existe ese username
-    if ($respuesta) {
-      
-      echo json_encode([
-        "status" => 200,
-        "success" => true,
-        "aviso" => "Usuario existente"
-      ]);
-    }
-
-  }
-
-  /*=============================================
-  ELMINAR USUARIO
-  =============================================*/
-  if ($_SERVER["REQUEST_METHOD"] === 'POST' && isset($_POST["EliminarIdUsuario"])) {
-
-    echo ControladorUsuarios::ctrEliminarUsuario();
-  }
-
-} else {
-
-  // Si NO hay una sesion iniciada, mostrará un error
-  echo json_encode([
-    "status" => 402,
-    "success" => false,
-    "error" => "Acceso no autorizado",
-    "mensaje" => "Haz intentado a acceder a una ruta protegida, Inicie sesion y vuelva a intentarlo"
-  ]);
+    /*=========================================
+    MÉTODO NO PERMITIDO
+    ==========================================*/
+    default:
+        http_response_code(405);
+        echo json_encode([
+            "status" => 405,
+            "success" => false,
+            "message" => "Método no permitido para la ruta de usuarios."
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        break;
 }

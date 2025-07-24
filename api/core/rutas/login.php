@@ -1,15 +1,29 @@
 <?php
-/*=============================================
-INICIAR SESION
-=============================================*/
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST["username"]) && isset($_POST["password"])) {
 
-    echo ControladorUsuarios::ctrIniciarSesion();
+// Configurar cabeceras para respuestas JSON
+header('Content-Type: application/json; charset=utf-8');
+
+// Obtener método HTTP
+$metodo = $_SERVER['REQUEST_METHOD'];
+
+// Procesar datos de entrada (JSON)
+$entrada = json_decode(file_get_contents('php://input'), true);
+
+if ($metodo === 'POST') {
+    $username = $entrada['username'] ?? null;
+    $password = $entrada['password'] ?? null;
+    
+    $respuesta = ControladorUsuarios::ctrIniciarSesion($username, $password);
+    
+    http_response_code($respuesta['status']);
+    echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 } else {
-
-    // Si no se han enviado los parámetros necesarios o son incorrectos
-    http_response_code(500);
-    echo json_encode(["Error" => "Parametros o datos Incorrectos."]);
+    
+    // Si no es un método POST, responder con error 405
+    http_response_code(405);
+    echo json_encode([
+        "status" => 405,
+        "success" => false,
+        "message" => "Método no permitido para esta ruta."
+    ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 }
-
-?>
