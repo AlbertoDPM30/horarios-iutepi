@@ -66,6 +66,11 @@ if (isset($ruta)) {
             include "rutas/materias.php";
             break;
 
+        case "estudiantes":
+            AuthMiddleware::handle();
+            include "rutas/estudiantes.php";
+            break;
+
         // Validar estado de la API
         case "status":
             echo json_encode(["status" => "API is running"]);
