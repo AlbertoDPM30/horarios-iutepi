@@ -20,7 +20,7 @@ class Autenticacion {
         self::init();
         $payload = [
             "iat" => time(), // Tiempo de emisión
-            "exp" => time() + 3600, // Expira en 1 hora
+            "exp" => time() + 18000, // Expira en 5 hora
             "user_id" => $userId // ID del usuario
         ];
         return JWT::encode($payload, self::$secret_key, self::$algoritmo);

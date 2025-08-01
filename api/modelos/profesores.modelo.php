@@ -13,6 +13,7 @@ class ModeloProfesores {
             $stmt->bindParam(":" . $item, $valor, PDO::PARAM_STR);
             $stmt->execute();
             return [
+                "status" => 200,
                 "success" => true,
                 "data" => $stmt->fetch(PDO::FETCH_ASSOC) // Obtener un solo registro
             ];
@@ -20,6 +21,7 @@ class ModeloProfesores {
             $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
             $stmt->execute();
             return [
+                "status" => 200,
                 "success" => true,
                 "data" => $stmt->fetchAll(PDO::FETCH_ASSOC) // Obtener todos los registros
             ];

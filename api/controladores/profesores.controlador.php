@@ -17,11 +17,7 @@ class ControladorProfesores {
                 ];
             }
 
-            return [
-                "status" => 200,
-                "success" => true,
-                "data" => $respuesta
-            ];
+            return $respuesta;
             
         } catch (Exception $e) {
             error_log("Error en ctrMostrarProfesores: " . $e->getMessage());
