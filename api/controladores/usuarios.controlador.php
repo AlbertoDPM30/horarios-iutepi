@@ -65,6 +65,14 @@ class ControladorUsuarios {
             if ($usuario && password_verify($password, $usuario['password'])) {
                 
                 $token = Autenticacion::generarToken($usuario['user_id']); // generamos un nuevo token.
+
+                if ($usuario['status'] != 1) {
+                    return [
+                        "status" => 401,
+                        "success" => false,
+                        "message" => "Usuario existente no disponible. Comuniquese con un administrador"
+                    ];
+                }
                 
                 return [
                     "status" => 200,

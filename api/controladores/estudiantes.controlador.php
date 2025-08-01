@@ -1,26 +1,30 @@
 <?php
 
-class ControladorProfesores {
+class ControladorEstudiantes {
 
     /*=============================================
-    MOSTRAR PROFESOR(ES) (GET)
+    MOSTRAR ESTUDIANTE(S) (GET)
     =============================================*/
-    static public function ctrMostrarProfesores($item = null, $valor = null) {
+    static public function ctrMostrarEstudiantes($item = null, $valor = null) {
         try {
-            $respuesta = ModeloProfesores::mdlMostrarProfesores("teachers", $item, $valor);
+            $respuesta = ModeloEstudiantes::mdlMostrarEstudiantes("students", $item, $valor);
             
             if ($item !== null && $valor !== null && !$respuesta) {
                 return [
                     "status" => 404,
                     "success" => false,
-                    "message" => "Profesor no encontrado."
+                    "message" => "Estudiante no encontrado."
                 ];
             }
 
-            return $respuesta;
+            return [
+                "status" => 200,
+                "success" => true,
+                "data" => $respuesta
+            ];
             
         } catch (Exception $e) {
-            error_log("Error en ctrMostrarProfesores: " . $e->getMessage());
+            error_log("Error en ctrMostrarEstudiantes: " . $e->getMessage());
             return [
                 "status" => 500,
                 "success" => false,
@@ -30,9 +34,9 @@ class ControladorProfesores {
     }
 
     /*=============================================
-    CREAR PROFESOR (POST)
+    CREAR ESTUDIANTE (POST)
     =============================================*/
-    static public function ctrCrearProfesor($datos) { 
+    static public function ctrCrearEstudiante($datos) { 
         try {
 
             $datosModelo = [
@@ -42,24 +46,24 @@ class ControladorProfesores {
                 'email' => $datos['email'] ?? null 
             ];
 
-            $respuesta = ModeloProfesores::mdlCrearProfesor("teachers", $datosModelo);
+            $respuesta = ModeloEstudiantes::mdlCrearEstudiante("students", $datosModelo);
 
             if ($respuesta === "ok") {
                 return [
                     "status" => 201, 
                     "success" => true,
-                    "message" => "Profesor creado exitosamente."
+                    "message" => "Estudiante creado exitosamente."
                 ];
             } else {
-                error_log("Error en ModeloProfesores::mdlCrearProfesor: " . $respuesta);
+                error_log("Error en ModeloEstudiantes::mdlCrearEstudiante: " . $respuesta);
                 return [
                     "status" => 500,
                     "success" => false,
-                    "message" => "No se pudo crear el profesor. Inténtalo de nuevo."
+                    "message" => "No se pudo crear el Estudiante. Inténtalo de nuevo."
                 ];
             }
         } catch (Exception $e) {
-            error_log("Error en ctrCrearProfesor: " . $e->getMessage());
+            error_log("Error en ctrCrearEstudiante: " . $e->getMessage());
             return [
                 "status" => 500,
                 "success" => false,
@@ -69,55 +73,53 @@ class ControladorProfesores {
     }
 
     /*=============================================
-    EDITAR PROFESOR (PUT)
+    EDITAR ESTUDIANTE (PUT)
     =============================================*/
-    static public function ctrEditarProfesor($datos) { 
+    static public function ctrEditarEstudiante($datos) { 
         try {
-            $editarIdProfesor = $datos['teacher_id']; 
+            $editarIdEstudiante = $datos['student_id']; 
 
-            // Validar si el profesor existe antes de editar
-            $profesorExistencia = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $editarIdProfesor);
-            if (!$profesorExistencia['success'] || !$profesorExistencia['data']) { 
+            // Validar si el Estudiante existe antes de editar
+            $existenciaEstudiante = ModeloEstudiantes::mdlMostrarEstudiantes("students", "student_id", $editarIdEstudiante);
+            if (!$existenciaEstudiante['success'] || !$existenciaEstudiante['data']) { 
                 return [
                     "status" => 404,
                     "success" => false,
-                    "message" => "Profesor no encontrado para actualizar."
+                    "message" => "Estudiante no encontrado para actualizar."
                 ];
             }
 
             // Preparar datos para el modelo
             $datosModelo = [
-                'teacher_id' => $editarIdProfesor
+                'student_id' => $editarIdEstudiante
             ];
             if (isset($datos['name'])) $datosModelo['name'] = $datos['name'];
             if (isset($datos['ci_code'])) $datosModelo['ci_code'] = $datos['ci_code'];
-            if (isset($datos['phone_number'])) $datosModelo['phone_number'] = $datos['phone_number'];
-            if (isset($datos['email'])) $datosModelo['email'] = $datos['email'];
 
-            $respuesta = ModeloProfesores::mdlEditarProfesor("teachers", $datosModelo);
+            $respuesta = ModeloEstudiantes::mdlEditarEstudiante("students", $datosModelo);
 
             if ($respuesta === "ok") {
                 return [
                     "status" => 200,
                     "success" => true,
-                    "message" => "Profesor actualizado correctamente."
+                    "message" => "Estudiante actualizado correctamente."
                 ];
             } else if ($respuesta === "no_changes") {
                 return [
                     "status" => 200,
                     "success" => true,
-                    "message" => "Profesor actualizado correctamente, aunque no se detectaron cambios en los datos enviados (ID válido)."
+                    "message" => "Estudiante actualizado correctamente, aunque no se detectaron cambios en los datos enviados (ID válido)."
                 ];
             } else {
-                error_log("Error en ModeloProfesores::mdlEditarProfesor: " . $respuesta);
+                error_log("Error en ModeloEstudiantes::mdlEditarEstudiante: " . $respuesta);
                 return [
                     "status" => 500,
                     "success" => false,
-                    "message" => "No se pudo actualizar el profesor. Inténtalo de nuevo."
+                    "message" => "No se pudo actualizar el Estudiante. Inténtalo de nuevo."
                 ];
             }
         } catch (Exception $e) {
-            error_log("Error en ctrEditarProfesor: " . $e->getMessage());
+            error_log("Error en ctrEditarEstudiante: " . $e->getMessage());
             return [
                 "status" => 500,
                 "success" => false,
@@ -127,38 +129,38 @@ class ControladorProfesores {
     }
 
     /*=============================================
-    ELIMINAR PROFESOR (DELETE)
+    ELIMINAR ESTUDIANTE (DELETE)
     =============================================*/
-    static public function ctrEliminarProfesor($teacher_id) { 
+    static public function ctrEliminarEstudiante($student_id) { 
         try {
-            // Validar si el profesor existe antes de eliminar
-            $profesorExistencia = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $teacher_id);
-            if (!$profesorExistencia['success'] || !$profesorExistencia['data']) {
+            // Validar si el Estudiante existe antes de eliminar
+            $existenciaEstudiante = ModeloEstudiantes::mdlMostrarEstudiantes("students", "student_id", $student_id);
+            if (!$existenciaEstudiante['success'] || !$existenciaEstudiante['data']) {
                 return [
                     "status" => 404,
                     "success" => false,
-                    "message" => "Profesor no encontrado para eliminar."
+                    "message" => "Estudiante no encontrado para eliminar."
                 ];
             }
 
-            $respuesta = ModeloProfesores::mdlEliminarProfesor("teachers", $teacher_id);
+            $respuesta = ModeloEstudiantes::mdlEliminarEstudiante("students", $student_id);
 
             if ($respuesta === "ok") {
                 return [
                     "status" => 200,
                     "success" => true,
-                    "message" => "Profesor eliminado correctamente."
+                    "message" => "Estudiante eliminado correctamente."
                 ];
             } else {
-                error_log("Error en ModeloProfesores::mdlEliminarProfesor: " . $respuesta);
+                error_log("Error en ModeloEstudiantes::mdlEliminarEstudiante: " . $respuesta);
                 return [
                     "status" => 500,
                     "success" => false,
-                    "message" => "No se pudo eliminar el profesor. Inténtalo de nuevo."
+                    "message" => "No se pudo eliminar el Estudiante. Inténtalo de nuevo."
                 ];
             }
         } catch (Exception $e) {
-            error_log("Error en ctrEliminarProfesor: " . $e->getMessage());
+            error_log("Error en ctrEliminarEstudiante: " . $e->getMessage());
             return [
                 "status" => 500,
                 "success" => false,

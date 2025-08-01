@@ -2,18 +2,17 @@
 
 require_once "conexion.php"; 
 
-class ModeloProfesores {
+class ModeloEstudiantes {
 
     /*=============================================
-    MOSTRAR PROFESOR(ES)
+    MOSTRAR ESTUDIANTE(S)
     =============================================*/
-    static public function mdlMostrarProfesores($tabla, $item, $valor) {
+    static public function mdlMostrarEstudiantes($tabla, $item, $valor) {
         if ($item != null) {
             $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :$item");
             $stmt->bindParam(":" . $item, $valor, PDO::PARAM_STR);
             $stmt->execute();
             return [
-                "status" => 200,
                 "success" => true,
                 "data" => $stmt->fetch(PDO::FETCH_ASSOC) // Obtener un solo registro
             ];
@@ -21,7 +20,6 @@ class ModeloProfesores {
             $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
             $stmt->execute();
             return [
-                "status" => 200,
                 "success" => true,
                 "data" => $stmt->fetchAll(PDO::FETCH_ASSOC) // Obtener todos los registros
             ];
@@ -30,28 +28,26 @@ class ModeloProfesores {
     }
 
     /*=============================================
-    CREAR PROFESOR
+    CREAR ESTUDIANTE
     =============================================*/
-    static public function mdlCrearProfesor($tabla, $datos) {
+    static public function mdlCrearEstudiante($tabla, $datos) {
         try {
             $stmt = Conexion::conectar()->prepare(
-                "INSERT INTO $tabla (name, ci_code, phone_number, email) 
-                VALUES (:name, :ci_code, :phone_number, :email)"
+                "INSERT INTO $tabla (name, ci_code) 
+                VALUES (:name, :ci_code)"
             );
 
             $stmt->bindParam(":name", $datos["name"], PDO::PARAM_STR);
             $stmt->bindParam(":ci_code", $datos["ci_code"], PDO::PARAM_STR);
-            $stmt->bindParam(":phone_number", $datos["phone_number"], PDO::PARAM_STR);
-            $stmt->bindParam(":email", $datos["email"], PDO::PARAM_STR);
 
             if ($stmt->execute()) {
                 return "ok";
             } else {
-                error_log("Error al crear profesor en BD: " . implode(" - ", $stmt->errorInfo()));
+                error_log("Error al crear Estudiante en BD: " . implode(" - ", $stmt->errorInfo()));
                 return "error";
             }
         } catch (PDOException $e) {
-            error_log("Excepción en mdlCrearProfesor: " . $e->getMessage());
+            error_log("Excepción en mdlCrearEstudiante: " . $e->getMessage());
             return "error";
         } finally {
             $stmt = null;
@@ -59,11 +55,11 @@ class ModeloProfesores {
     }
 
     /*=============================================
-    EDITAR PROFESOR
+    EDITAR ESTUDIANTE
     =============================================*/
-    static public function mdlEditarProfesor($tabla, $datos) {
+    static public function mdlEditarEstudiante($tabla, $datos) {
         try {
-            if (!isset($datos['teacher_id'])) {
+            if (!isset($datos['student_id'])) {
                 return "error_no_id";
             }
 
@@ -78,14 +74,6 @@ class ModeloProfesores {
                 $setClauses[] = "ci_code = :ci_code";
                 $bindParams[":ci_code"] = $datos['ci_code'];
             }
-            if (isset($datos['phone_number'])) {
-                $setClauses[] = "phone_number = :phone_number";
-                $bindParams[":phone_number"] = $datos['phone_number'];
-            }
-            if (isset($datos['email'])) {
-                $setClauses[] = "email = :email";
-                $bindParams[":email"] = $datos['email'];
-            }
 
             date_default_timezone_set('America/Caracas');
             $current_datetime = date('Y-m-d H:i:s');
@@ -96,7 +84,7 @@ class ModeloProfesores {
                 return "no_data_to_update";
             }
 
-            $sql = "UPDATE $tabla SET " . implode(", ", $setClauses) . " WHERE teacher_id = :teacher_id";
+            $sql = "UPDATE $tabla SET " . implode(", ", $setClauses) . " WHERE student_id = :student_id";
             $stmt = Conexion::conectar()->prepare($sql);
 
             foreach ($bindParams as $param => $value) {
@@ -111,7 +99,7 @@ class ModeloProfesores {
                 $stmt->bindValue($param, $value, $paramType);
             }
             
-            $stmt->bindValue(":teacher_id", $datos['teacher_id'], PDO::PARAM_INT);
+            $stmt->bindValue(":student_id", $datos['student_id'], PDO::PARAM_INT);
 
             if ($stmt->execute()) {
                 if ($stmt->rowCount() > 0) {
@@ -120,11 +108,11 @@ class ModeloProfesores {
                     return "no_changes";
                 }
             } else {
-                error_log("Error al editar profesor en BD: " . implode(" - ", $stmt->errorInfo()));
+                error_log("Error al editar Estudiante en BD: " . implode(" - ", $stmt->errorInfo()));
                 return "error";
             }
         } catch (PDOException $e) {
-            error_log("Excepción en mdlEditarProfesor: " . $e->getMessage());
+            error_log("Excepción en mdlEditarEstudiante: " . $e->getMessage());
             return "error";
         } finally {
             $stmt = null;
@@ -132,12 +120,12 @@ class ModeloProfesores {
     }
 
     /*=============================================
-    ELIMINAR PROFESOR
+    ELIMINAR ESTUDIANTE
     =============================================*/
-    static public function mdlEliminarProfesor($tabla, $id_profesor) {
+    static public function mdlEliminarEstudiante($tabla, $id_Estudiante) {
         try {
-            $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE teacher_id = :teacher_id");
-            $stmt->bindParam(":teacher_id", $id_profesor, PDO::PARAM_INT);
+            $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE student_id = :student_id");
+            $stmt->bindParam(":student_id", $id_Estudiante, PDO::PARAM_INT);
 
             if ($stmt->execute()) {
                 if ($stmt->rowCount() > 0) {
@@ -147,11 +135,11 @@ class ModeloProfesores {
                     return "no_found"; 
                 }
             } else {
-                error_log("Error al eliminar profesor en BD: " . implode(" - ", $stmt->errorInfo()));
+                error_log("Error al eliminar Estudiante en BD: " . implode(" - ", $stmt->errorInfo()));
                 return "error";
             }
         } catch (PDOException $e) {
-            error_log("Excepción en mdlEliminarProfesor: " . $e->getMessage());
+            error_log("Excepción en mdlEliminarEstudiante: " . $e->getMessage());
             return "error";
         } finally {
             $stmt = null;
