@@ -200,4 +200,214 @@ class ControladorHabilidades {
             ];
         }
     }
+
+    /*===================== PROFESORES ========================*/
+
+    /*=============================================
+    MOSTRAR HABILIDADES DE UN PROFESOR
+    =============================================*/
+    static public function ctrMostrarHabilidadesProfesores($item1 = null,  $item2 = null, $valor1 = null, $valor2 = null) {
+        try {
+            $respuesta = ModeloHabilidades::mdlMostrarHabilidadesProfesores("teacher_skills", $item1, $valor1, $item2, $valor2);
+            
+            return [
+                "status" => 200,
+                "success" => true,
+                "data" => $respuesta
+            ];
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrMostrarHabilidades: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error al obtener habilidades",
+            ];
+        }
+    }
+
+    /*=============================================
+    CREAR HABILIDAD
+    =============================================*/
+    static public function ctrCrearHabilidadProfesor($datos) {
+        try {
+            // Validar que los id's no estén vacío
+            if (empty($datos['teacher_id']) || empty($datos['skill_id'])) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "El 'id' de la habilidad y el 'id' del Profesor es requerido"
+                ];
+            }
+
+            // Crear la habilidad
+            $datos = [
+                "teacher_id" => trim($datos['teacher_id']),
+                "skill_id" => trim($datos['skill_id']),
+                "stars" => trim($datos['stars'])
+            ];
+
+            $resultado = ModeloHabilidades::mdlCrearHabilidadProfesor("teacher_skills", $datos);
+
+            if ($resultado === "ok") {
+
+                $respuestaProfesor = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $datos['teacher_id']);
+                $respuestaHabilidad = ModeloHabilidades::mdlMostrarHabilidades("skills", "skill_id", $datos['skill_id']);
+
+                if (!empty($respuestaProfesor) && !empty($respuestaHabilidad)) {
+
+                    return [
+                        "status" => 201,
+                        "success" => true,
+                        "message" => "Habilidad asignada exitosamente al profesor",
+                        "data" => [
+                            "profesor" => $respuestaProfesor['data']['name'],
+                            "habilidad" => $respuestaHabilidad['skill_name'],
+                            "stars" => $datos['stars']
+                        ]
+                    ];
+                } else {
+                    
+                    return [
+                        "status" => 201,
+                        "success" => true,
+                        "message" => "Habilidad asignada exitosamente al profesor",
+                        "warning" => "No DATA, reporte con un administrador"
+                    ];
+                }
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al asignar la habilidad al profesor",
+                    "error" => $resultado
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrCrearHabilidadProfesor: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al asignar la habilidad al profesor"
+            ];
+        }
+    }
+
+    /*=============================================
+    ACTUALIZAR HABILIDAD DEL PROFESOR
+    =============================================*/
+    static public function ctrEditarHabilidadProfesor($datos) {
+        try {
+            // Validar datos de entrada
+            if (empty($datos['skill_id']) || empty($datos['teacher_id']) || empty($datos['stars'])) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "ID de habilidad, ID del profesor, y el campo 'stars' son requeridos"
+                ];
+            }
+
+            // Verificar si la habilidad está asignada al profesor
+            $habilidad = ModeloHabilidades::mdlMostrarHabilidadesProfesores("teacher_skills", "teacher_id", $datos['teacher_id'], "skill_id", $datos['skill_id']);
+            if (!$habilidad) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Habilidad no encontrada"
+                ];
+            }
+
+            // Actualizar la habilidad del profesor
+            $datos = [
+                "skill_id" => $datos['skill_id'],
+                "teacher_id" => $datos['teacher_id'],
+                "stars" => $datos['stars']
+            ];
+
+            $resultado = ModeloHabilidades::mdlEditarHabilidadProfesor("teacher_skills", $datos);
+
+            $respuestaProfesor = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $datos['teacher_id']);
+            $respuestaHabilidad = ModeloHabilidades::mdlMostrarHabilidades("skills", "skill_id", $datos['skill_id']);
+
+            if ($resultado === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Habilidad del profesor actualizada exitosamente",
+                    "data" => [
+                        "profesor" => $respuestaProfesor['data']['name'],
+                        "habilidad" => $respuestaHabilidad['skill_name'],
+                        "stars" => $datos['stars']
+                    ]
+                ];
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al actualizar habilidad"
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrEditarHabilidad: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al actualizar habilidad"
+            ];
+        }
+    }
+
+    /*=============================================
+    ELIMINAR HABILIDAD
+    =============================================*/
+    static public function ctrEliminarHabilidadProfesor($teacher_skill_id) {
+        try {
+            // Validar ID
+            if (empty($teacher_skill_id)) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "ID es requerido"
+                ];
+            }
+
+            // Verificar si la habilidad existe
+            $habilidad = ModeloHabilidades::mdlMostrarHabilidadesProfesores("teacher_skills", "teacher_skill_id", $teacher_skill_id);
+            if (!$habilidad) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Habilidad no encontrada"
+                ];
+            }
+
+            // Eliminar la habilidad
+            $resultado = ModeloHabilidades::mdlEliminarHabilidadProfesor("teacher_skills", $teacher_skill_id);
+
+            if ($resultado === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Habilidad eliminada del profesor exitosamente"
+                ];
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al eliminar la habilidad",
+                    "resultado" => $resultado
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrEliminarHabilidad: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al eliminar habilidad"
+            ];
+        }
+    }
 }
