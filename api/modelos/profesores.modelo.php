@@ -157,4 +157,125 @@ class ModeloProfesores {
             $stmt = null;
         }
     }
+    
+    /*====================== DISPONIBILIDAD =======================*/
+
+    /*=============================================
+    MOSTRAR DISPONIBILIDADES DEL PROFESOR (GET)
+    =============================================*/
+    static public function mdlMostrarDisponibilidadesProfesores($tabla, $item = null, $valor = null) {
+        try {
+            if ($item != null) {
+                
+                // Obtener una Disponibilidad específica
+                $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :valor");
+                $stmt->bindParam(":valor", $valor, PDO::PARAM_STR);
+
+            } elseif ($item != "teacher_id") {
+                
+                // Obtener todas las disponibilidades de un profesor
+                $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :valor ORDER BY availability_id ASC");
+                $stmt->bindParam(":valor", $valor, PDO::PARAM_STR);
+
+            } else {
+                // Obtener todas las disponibilidades
+                $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla ORDER BY availability_id ASC");
+            }
+            
+            $stmt->execute();
+            
+            return ($item != null) ? $stmt->fetch(PDO::FETCH_ASSOC) : $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Error en mdlMostrarDisponibilidadesProfesores: " . $e->getMessage());
+            return false;
+
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
+
+    /*=============================================
+    ASIGNAR DISPONIBILIDAD AL PROFESOR (POST)
+    =============================================*/
+    static public function mdlCrearDisponibilidadProfesor($tabla, $datos) {
+        try {
+            $stmt = Conexion::conectar()->prepare("INSERT INTO  $tabla 
+                                                                (teacher_id,
+                                                                day_of_week,
+                                                                start_time,
+                                                                end_time)
+                                                        VALUES  (:teacher_id,
+                                                                :day_of_week,
+                                                                :start_time,
+                                                                :end_time)");
+
+            $stmt->bindParam(":teacher_id", $datos["teacher_id"], PDO::PARAM_INT);
+            $stmt->bindParam(":day_of_week", $datos["day_of_week"], PDO::PARAM_STR);
+            $stmt->bindParam(":start_time", $datos["start_time"], PDO::PARAM_STR);
+            $stmt->bindParam(":end_time", $datos["end_time"], PDO::PARAM_STR);
+            
+            return ($stmt->execute()) ? "ok" : "error";
+            
+        } catch (PDOException $e) {
+            error_log("Error en mdlCrearDisponibilidadProfesor: " . $e->getMessage());
+            return "error";
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
+
+    /*=============================================
+    EDITAR DISPONIBILIDAD DEL PROFESOR (PUT / PATCH)
+    =============================================*/
+    static public function mdlEditarDisponibilidadProfesor($tabla, $datos) {
+        try {
+            $stmt = Conexion::conectar()->prepare("UPDATE $tabla SET 
+                                                                teacher_id      = :teacher_id,
+                                                                day_of_week     = :day_of_week,
+                                                                start_time      = :start_time,
+                                                                end_time        = :stars
+                                                        WHERE   availability_id = :availability_id");
+            
+            $stmt->bindParam(":availability_id", $datos["teacher_id"], PDO::PARAM_INT);
+            $stmt->bindParam(":teacher_id", $datos["teacher_id"], PDO::PARAM_INT);
+            $stmt->bindParam(":day_of_week", $datos["day_of_week"], PDO::PARAM_STR);
+            $stmt->bindParam(":start_time", $datos["start_time"], PDO::PARAM_STR);
+            $stmt->bindParam(":end_time", $datos["end_time"], PDO::PARAM_STR);
+            
+            return ($stmt->execute()) ? "ok" : "error";
+            
+        } catch (PDOException $e) {
+            error_log("Error en mdlEditarDisponibilidadProfesor: " . $e->getMessage());
+            return "error";
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
+
+    /*=============================================
+    ELIMINAR DISPONIBILIDAD DEL PROFESOR (DELETE)
+    =============================================*/
+    static public function mdlEliminarDisponibilidadProfesor($tabla, $availability_id) {
+        try {
+            $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE availability_id = :availability_id");
+            $stmt->bindParam(":availability_id", $availability_id, PDO::PARAM_INT);
+            
+            return ($stmt->execute()) ? "ok" : "error";
+            
+        } catch (PDOException $e) {
+            error_log("Error en mdlEliminarDisponibilidadProfesor: " . $e->getMessage());
+            return "error";
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
 }

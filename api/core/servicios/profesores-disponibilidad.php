@@ -1,20 +1,20 @@
 <?php
 
 /*=============================================
-ENDPOINT DE PROFESORES-HABILIDADES
+ENDPOINT DE PROFESORES-DIPONIBILIDAD
 =============================================*/
 header('Content-Type: application/json; charset=utf-8');
 
 switch ($_SERVER['REQUEST_METHOD']) {
     case 'GET':
         /*=============================================
-        OBTENER HABILIDADES DEL PROFESOR
+        OBTENER DIPONIBILIDAD DEL PROFESOR
         =============================================*/
 
         $itemTeacher = null;
         $valorTeacher = null;
-        $itemSkill = null;
-        $valorSkill = null;
+        $itemAvailability = null;
+        $valorAvailability = null;
 
         if (isset($_GET['teacher_id'])) {
 
@@ -22,30 +22,23 @@ switch ($_SERVER['REQUEST_METHOD']) {
             $valorTeacher = $_GET['teacher_id'];
         }
 
-        if (isset($_GET['skill_id'])) {
-
-            $itemSkill ="skill_id";
-            $valorSkill = $_GET['skill_id'];
-        }
-
-        $respuesta = ControladorHabilidades::ctrMostrarHabilidadesProfesores($itemTeacher, $itemSkill, $valorTeacher, $valorSkill);
+        $respuesta = ControladorProfesores::ctrMostrarDisponibilidadProfesores($itemTeacher, $itemAvailability, $valorTeacher, $valorAvailability);
 
         // Enviamos los datos completos al cliente
         foreach ($respuesta['data'] AS $key => $data) {
             
             $respuestaProfesor = ControladorProfesores::ctrMostrarProfesores("teacher_id", $data['teacher_id']);
-            $respuestaHabilidad = ControladorHabilidades::ctrMostrarHabilidades("skill_id", $data['skill_id']);
 
             echo json_encode([
                 "status" => $respuesta["status"],
                 "success" => $respuesta["success"],
                 "data" => [
-                    "teacher_skill_id" => $data['teacher_skill_id'],
+                    "availability_id" => $data['availability_id'],
                     "teacher_id" => $data['teacher_id'],
                     "profesor" => $respuestaProfesor['data']["name"],
-                    "skill_id" => $data['skill_id'],
-                    "habilidad" => $respuestaHabilidad['data']["skill_name"],
-                    "stars" => $data['stars']
+                    "dia_semana" => $data["day_of_week"],
+                    "hora_inicio" => $data["start_time"],
+                    "hora_final" => $data["end_time"]
                 ]
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         }
@@ -54,67 +47,51 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'POST':
         /*=============================================
-        REGISTRAR NUEVA HABILIDAD AL PROFESOR
+        REGISTRAR NUEVA DISPONIBILIDAD AL PROFESOR
         =============================================*/
         $datos = json_decode(file_get_contents('php://input'), true);
 
         // Validar campos requeridos
-        if (empty($datos['teacher_id']) || empty($datos['skill_id'])) {
+        if (empty($datos['teacher_id']) || empty($datos['day_of_week']) || empty($datos['start_time']) || empty($datos['end_time'])) {
             echo json_encode([
                 "status" => 400,
                 "success" => false,
-                "message" => "Los campos 'teacher_id' y 'skill_id' son obligatorios."
+                "message" => "Los campos 'teacher_id', 'day_of_week', 'start_time', 'end_time' son obligatorios."
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             break;
         }
 
-        $validarItemTeacher = isset($_GET['teacher_id']) ? "teacher_id" : null;
-        $validarValorTeacher = $datos['teacher_id'];
-        $validarItemSkill = isset($_GET['skill_id']) ? "skill_id" : null;
-        $validarValorSkill = $datos['skill_id'];
-
-        // Validar si la habilidad ya fue asignada
-        $habilidadProfesorAsignada = ControladorHabilidades::ctrMostrarHabilidadesProfesores($validarItemTeacher, $validarItemSkill, $validarValorTeacher, $validarValorSkill);
-        if ($habilidadProfesorAsignada['success'] !== true && !empty($habilidadProfesorAsignada['data'])) {
-            echo json_encode([
-                "status" => 409,
-                "success" => false,
-                "message" => "Esta Habilidad ya se encuentra registrada para este profesor."
-            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            break;
-        }
-        
-        $respuesta = ControladorHabilidades::ctrCrearHabilidadProfesor($datos); // Enviar datos al controlador
+        $respuesta = ControladorProfesores::ctrCrearDisponibilidadProfesor($datos); // Enviar datos al controlador
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         break;
 
     case 'PUT':
         /*=============================================
-        EDITAR HABILIDAD DEL PROFESOR
+        EDITAR DISPONIBILIDAD DEL PROFESOR
         =============================================*/
         $datos = json_decode(file_get_contents('php://input'), true);
 
-        if (empty($datos['teacher_id']) || empty($datos['skill_id'])) {
+        if (empty($datos['teacher_id']) || empty($datos['availability_id'])) {
             
             http_response_code(400);
             echo json_encode([
                 "status" => 400,
                 "success" => false,
-                "message" => "El 'teacher_id' es obligatorio para actualizar un profesor."
+                "message" => "El 'teacher_id' es obligatorio para actualizar la disponibilidad de un profesor."
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             break;
         }
 
-        $respuesta = ControladorHabilidades::ctrEditarHabilidadProfesor($datos); // Enviar datos al controlador        
+        $respuesta = ControladorProfesores::ctrEditarDisponibilidadProfesor($datos); // Enviar datos al controlador        
         http_response_code(200);
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         break;
 
     case 'DELETE':
         /*=============================================
-        ELIMINAR HABILIDAD DEL PROFESOR
+        ELIMINAR DISPONIBILIDAD DEL PROFESOR
         =============================================*/
-        if (!isset($_GET['teacher_skill_id'])) {
+        if (!isset($_GET['availability_id'])) {
             
             http_response_code(400);
             echo json_encode([
@@ -125,7 +102,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
             break;
         }
 
-        $respuesta = ControladorHabilidades::ctrEliminarHabilidadProfesor($_GET['teacher_skill_id']); // Enviar ID's al controlador
+        $respuesta = ControladorProfesores::ctrEliminarDisponibilidadProfesor($_GET['availability_id']); // Enviar ID's al controlador
         http_response_code(200);
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         break;

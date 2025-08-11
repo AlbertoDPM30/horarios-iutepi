@@ -166,4 +166,209 @@ class ControladorProfesores {
             ];
         }
     }
+    
+    /*===================== DISPONIBILIDAD ========================*/
+
+    /*=============================================
+    MOSTRAR DISPONIBILIDADES DE UN PROFESOR
+    =============================================*/
+    static public function ctrMostrarDisponibilidadesProfesores($item = null,  $valor = null) {
+        try {
+            $respuesta = ModeloProfesores::mdlMostrarDisponibilidadesProfesores("teacher_availability", $item, $valor);
+            
+            return [
+                "status" => 200,
+                "success" => true,
+                "data" => $respuesta
+            ];
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrMostrarDisponibilidadesProfesor: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error al obtener la Disponibilidad",
+            ];
+        }
+    }
+
+    /*=============================================
+    CREAR DISPONIBILIDAD
+    =============================================*/
+    static public function ctrCrearDisponibilidadProfesor($datos) {
+        try {
+            // Validar que el id no estén vacío
+            if (empty($datos['availability_id'])) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "El 'id' de la disponibilidad es requerido"
+                ];
+            }
+
+            // Crear la Disponobilidad
+            $datos = [
+                "teacher_id" => trim($datos['teacher_id']),
+                "day_of_week" => trim($datos['day_of_week']),
+                "start_time" => trim($datos['start_time']),
+                "end_time" => trim($datos['end_time']),
+                "stars" => trim($datos['stars'])
+            ];
+
+            $resultado = ModeloProfesores::mdlCrearDisponibilidadProfesor("teacher_availability", $datos);
+
+            if ($resultado === "ok") {
+
+                // Validar si el profesor existe
+                $respuestaProfesor = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $datos['teacher_id']);
+
+                if (!empty($respuestaProfesor)) {
+
+                    return [
+                        "status" => 201,
+                        "success" => true,
+                        "message" => "Disponibilidad asignada exitosamente al profesor",
+                        "data" => [
+                            "profesor" => $respuestaProfesor['data']['name'],
+                            "dia_semana" => $datos['day_of_week'],
+                            "hora_inicio" => $datos['start_time'],
+                            "hora_final" => $datos['end_time']
+                        ]
+                    ];
+
+                } else {
+                    
+                    return [
+                        "status" => 201,
+                        "success" => true,
+                        "message" => "Disponibilidad asignada exitosamente al profesor",
+                        "warning" => "No DATA, reporte con un administrador"
+                    ];
+                }
+            } else {
+
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al registrar la disponibilidad"
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrCrearDisponibilidadProfesor: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al asignar la habilidad al profesor"
+            ];
+        }
+    }
+
+    /*=============================================
+    ACTUALIZAR DISPONIBILIDAD DEL PROFESOR
+    ==============================================*/
+    static public function ctrEditarDisponibilidadProfesor($datos) {
+        try {
+            // Validar datos de entrada
+            if (empty($datos['availability_id'])) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "ID de la disponibilidad es requerido"
+                ];
+            }
+
+            // Actualizar la habilidad del profesor
+            $datos = [
+                "availability_id" => $datos['availability_id'],
+                "teacher_id" => $datos['teacher_id'],
+                "day_of_week" => $datos['day_of_week'],
+                "start_time" => $datos['start_time'],
+                "end_time" => $datos['end_time']
+            ];
+
+            $resultado = ModeloProfesores::mdlEditarDisponibilidadProfesor("teacher_availability", $datos);
+
+            $respuestaProfesor = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $datos['teacher_id']);
+
+            if ($resultado === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Habilidad del profesor actualizada exitosamente",
+                    "data" => [
+                        "profesor" => $respuestaProfesor['data']['name'],
+                        "dia_semana" => $datos['day_of_week'],
+                        "hora_inicio" => $datos['start_time'],
+                        "hora_start" => $datos['end_time']
+                    ]
+                ];
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al actualizar la Disponibilidad"
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrEditarDisponibilidadProfesor: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al actualizar disponibilidad"
+            ];
+        }
+    }
+
+    /*=============================================
+    ELIMINAR DISPONIBILIDAD DEL PROFESOR
+    =============================================*/
+    static public function ctrEliminarDisponibilidadProfesor($availability_id) {
+        try {
+            // Validar ID
+            if (empty($availability_id)) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "ID es requerido"
+                ];
+            }
+
+            // Verificar si la disponibilidad existe
+            $disponibilidad = ModeloProfesores::mdlMostrarDisponibilidadesProfesores("teacher_availability", "availability_id", $availability_id);
+            if (!$disponibilidad) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Disponibilidad no encontrada"
+                ];
+            }
+
+            // Eliminar la Disponibilidad del profesor
+            $resultado = ModeloProfesores::mdlEliminarDisponibilidadProfesor("teacher_availability", $availability_id);
+
+            if ($resultado === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Disponibilidad eliminada del profesor exitosamente"
+                ];
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al eliminar la Disponibilidad"
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrEliminarDisponibilidadProfesor: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al eliminar la disponibilidad"
+            ];
+        }
+    }
 }

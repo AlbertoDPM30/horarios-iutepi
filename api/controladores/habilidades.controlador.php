@@ -279,8 +279,7 @@ class ControladorHabilidades {
                 return [
                     "status" => 500,
                     "success" => false,
-                    "message" => "Error al asignar la habilidad al profesor",
-                    "error" => $resultado
+                    "message" => "Error al asignar la habilidad al profesor"
                 ];
             }
             
