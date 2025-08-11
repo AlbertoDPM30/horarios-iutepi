@@ -409,4 +409,214 @@ class ControladorHabilidades {
             ];
         }
     }
+
+    /*===================== MATERIAS ========================*/
+
+    /*=============================================
+    MOSTRAR HABILIDADES DE UNa MATERIA
+    =============================================*/
+    static public function ctrMostrarMateriasHabilidades($item = null,  $valor = null) {
+        try {
+            $respuesta = ModeloHabilidades::mdlMostrarMateriasHabilidades("teacher_skills", $item, $valor);
+            
+            return [
+                "status" => 200,
+                "success" => true,
+                "data" => $respuesta
+            ];
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrMostrarHabilidades: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error al obtener habilidades de la materia",
+            ];
+        }
+    }
+
+    /*=============================================
+    CREAR HABILIDAD PARA UNA MATERIA
+    =============================================*/
+    static public function ctrCrearMateriasHabilidad($datos) {
+        try {
+            // Validar que el id no esté vacío
+            if (empty($datos['skill_id']) || empty($datos['subject_id'])) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "El 'id' de la habilidad y el 'id' de la materia son requerido"
+                ];
+            }
+
+            // Crear la habilidad de una materia
+            $datos = [
+                "subject_id" => trim($datos['subject_id']),
+                "skill_id" => trim($datos['skill_id']),
+                "min_stars" => trim($datos['min_stars'])
+            ];
+
+            $resultado = ModeloHabilidades::mdlCrearHabilidadProfesor("teacher_skills", $datos);
+
+            if ($resultado === "ok") {
+
+                $respuestaMateria = ModeloMaterias::mdlMostrarMaterias("subjects", "subject_id", $datos['subject_id']);
+                $respuestaHabilidad = ModeloHabilidades::mdlMostrarHabilidades("skills", "skill_id", $datos['skill_id']);
+
+                if (!empty($respuestaMateria) && !empty($respuestaHabilidad)) {
+
+                    return [
+                        "status" => 201,
+                        "success" => true,
+                        "message" => "Habilidad asignada exitosamente al materia",
+                        "data" => [
+                            "materia" => $respuestaMateria['data']['name'],
+                            "habilidad" => $respuestaHabilidad['skill_name'],
+                            "min_stars" => $datos['min_stars']
+                        ]
+                    ];
+                } else {
+                    
+                    return [
+                        "status" => 201,
+                        "success" => true,
+                        "message" => "Habilidad asignada exitosamente al profesor",
+                        "warning" => "No DATA, reporte con un administrador"
+                    ];
+                }
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al asignar la habilidad a la materia"
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrCrearMateriasHabilidad: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al asignar la habilidad a la materia"
+            ];
+        }
+    }
+
+    /*=============================================
+    ACTUALIZAR HABILIDAD DE LA MATERIA
+    =============================================*/
+    static public function ctrEditarMateriasHabilidad($datos) {
+        try {
+            // Validar datos de entrada
+            if (empty($datos['subject_skill_id'])) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "ID de la habilidad de la materia es requerido"
+                ];
+            }
+
+            // Verificar si la habilidad está asignada a la materia
+            $habilidad = ModeloHabilidades::mdlMostrarMateriasHabilidades("subjects_skills", "subject_skill_id", $datos['subject_skill_id']);
+            if (!$habilidad) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Habilidad no encontrada"
+                ];
+            }
+
+            // Actualizar la habilidad del profesor
+            $datos = [
+                "subject_skill_id" => $datos['subject_skill_id'],
+                "subject_id" => $datos['subject_id'],
+                "skill_id" => $datos['skill_id'],
+                "min_stars" => $datos['min_stars']
+            ];
+
+            $resultado = ModeloHabilidades::mdlEditarMateriasHabilidad("teacher_skills", $datos);
+
+            $respuestaMateria = ModeloMaterias::mdlMostrarMaterias("subjects", "subject_id", $datos['subject_id']);
+            $respuestaHabilidad = ModeloHabilidades::mdlMostrarHabilidades("skills", "skill_id", $datos['skill_id']);
+
+            if ($resultado === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Habilidad de la materia actualizada exitosamente",
+                    "data" => [
+                        "materia" => $respuestaMateria['data']['name'],
+                        "habilidad" => $respuestaHabilidad['skill_name'],
+                        "min_stars" => $datos['min_stars']
+                    ]
+                ];
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al actualizar habilidad"
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrEditarMateriasHabilidad: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al actualizar habilidad"
+            ];
+        }
+    }
+
+    /*=============================================
+    ELIMINAR HABILIDAD DE LA MATERIA
+    =============================================*/
+    static public function ctrEliminarMateriasHabilidad($teacher_skill_id) {
+        try {
+            // Validar ID
+            if (empty($teacher_skill_id)) {
+                return [
+                    "status" => 400,
+                    "success" => false,
+                    "message" => "ID es requerido"
+                ];
+            }
+
+            // Verificar si la habilidad existe
+            $habilidad = ModeloHabilidades::mdlMostrarMateriasHabilidades("subjects_skills", "subject_skill_id", $subject_skill_id);
+            if (!$habilidad) {
+                return [
+                    "status" => 404,
+                    "success" => false,
+                    "message" => "Habilidad no encontrada"
+                ];
+            }
+
+            // Eliminar la habilidad
+            $resultado = ModeloHabilidades::mdlEliminarMateriasHabilidad("subjects_skills", $subject_skill_id);
+
+            if ($resultado === "ok") {
+                return [
+                    "status" => 200,
+                    "success" => true,
+                    "message" => "Habilidad eliminada de la materia exitosamente"
+                ];
+            } else {
+                return [
+                    "status" => 500,
+                    "success" => false,
+                    "message" => "Error al eliminar la habilidad",
+                    "resultado" => $resultado
+                ];
+            }
+            
+        } catch (PDOException $e) {
+            error_log("Error en ctrEliminarMateriasHabilidad: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor al eliminar habilidad"
+            ];
+        }
+    }
 }
