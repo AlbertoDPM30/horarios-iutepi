@@ -198,11 +198,11 @@ class ControladorProfesores {
     static public function ctrCrearDisponibilidadProfesor($datos) {
         try {
             // Validar que el id no estén vacío
-            if (empty($datos['availability_id'])) {
+            if (empty($datos['teacher_id'])) {
                 return [
                     "status" => 400,
                     "success" => false,
-                    "message" => "El 'id' de la disponibilidad es requerido"
+                    "message" => "El 'id' del profesor es requerido"
                 ];
             }
 
@@ -211,8 +211,7 @@ class ControladorProfesores {
                 "teacher_id" => trim($datos['teacher_id']),
                 "day_of_week" => trim($datos['day_of_week']),
                 "start_time" => trim($datos['start_time']),
-                "end_time" => trim($datos['end_time']),
-                "stars" => trim($datos['stars'])
+                "end_time" => trim($datos['end_time'])
             ];
 
             $resultado = ModeloProfesores::mdlCrearDisponibilidadProfesor("teacher_availability", $datos);

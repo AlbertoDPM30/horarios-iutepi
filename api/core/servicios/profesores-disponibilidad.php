@@ -11,35 +11,40 @@ switch ($_SERVER['REQUEST_METHOD']) {
         OBTENER DIPONIBILIDAD DEL PROFESOR
         =============================================*/
 
-        $itemTeacher = null;
-        $valorTeacher = null;
-        $itemAvailability = null;
-        $valorAvailability = null;
+        $item = null;
+        $valor = null;
 
         if (isset($_GET['teacher_id'])) {
 
-            $itemTeacher = "teacher_id";
-            $valorTeacher = $_GET['teacher_id'];
+            $item = "teacher_id";
+            $valor = $_GET['teacher_id'];
         }
 
-        $respuesta = ControladorProfesores::ctrMostrarDisponibilidadProfesores($itemTeacher, $itemAvailability, $valorTeacher, $valorAvailability);
+        if (isset($_GET['availability_id'])) {
+
+            $item = "availability_id";
+            $valor = $_GET['availability_id'];
+        }
+
+        $respuesta = ControladorProfesores::ctrMostrarDisponibilidadesProfesores($item, $valor);
 
         // Enviamos los datos completos al cliente
-        foreach ($respuesta['data'] AS $key => $data) {
-            
-            $respuestaProfesor = ControladorProfesores::ctrMostrarProfesores("teacher_id", $data['teacher_id']);
+        if ($respuesta['status'] == 200 && $respuesta['success'] == true && $respuesta['data'] != false) {
 
+            http_response_code($respuesta["status"]);
             echo json_encode([
-                "status" => $respuesta["status"],
-                "success" => $respuesta["success"],
-                "data" => [
-                    "availability_id" => $data['availability_id'],
-                    "teacher_id" => $data['teacher_id'],
-                    "profesor" => $respuestaProfesor['data']["name"],
-                    "dia_semana" => $data["day_of_week"],
-                    "hora_inicio" => $data["start_time"],
-                    "hora_final" => $data["end_time"]
-                ]
+                'status' => $respuesta["status"],
+                'success' => $respuesta["success"],
+                'data' => $respuesta["data"]
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        } else {
+
+            http_response_code($respuesta["status"]);
+            echo json_encode([
+                'status' => $respuesta["status"],
+                'success' => $respuesta["success"],
+                'message' => $respuesta["message"]
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         }
 
@@ -53,6 +58,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
         // Validar campos requeridos
         if (empty($datos['teacher_id']) || empty($datos['day_of_week']) || empty($datos['start_time']) || empty($datos['end_time'])) {
+            http_response_code(400);
             echo json_encode([
                 "status" => 400,
                 "success" => false,
@@ -97,13 +103,13 @@ switch ($_SERVER['REQUEST_METHOD']) {
             echo json_encode([
                 "status" => 400,
                 "success" => false,
-                "message" => "El 'id' del profesor es obligatorio para eliminar."
+                "message" => "El 'id' de la disponibilidad es obligatorio para eliminar."
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             break;
         }
 
-        $respuesta = ControladorProfesores::ctrEliminarDisponibilidadProfesor($_GET['availability_id']); // Enviar ID's al controlador
-        http_response_code(200);
+        $respuesta = ControladorProfesores::ctrEliminarDisponibilidadProfesor($_GET['availability_id']); // Enviar ID al controlador
+        http_response_code($respuesta["status"]);
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         break;
 

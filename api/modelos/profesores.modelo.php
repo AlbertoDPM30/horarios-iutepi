@@ -171,7 +171,7 @@ class ModeloProfesores {
                 $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :valor");
                 $stmt->bindParam(":valor", $valor, PDO::PARAM_STR);
 
-            } elseif ($item != "teacher_id") {
+            } elseif ($item == "teacher_id") {
                 
                 // Obtener todas las disponibilidades de un profesor
                 $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :valor ORDER BY availability_id ASC");
@@ -183,8 +183,19 @@ class ModeloProfesores {
             }
             
             $stmt->execute();
+
+            // if ($item != null && $item != "teacher_id") {
+            //     return $stmt->fetch(PDO::FETCH_ASSOC);
+
+            // }elseif ($item == "teacher_id") {
+            //     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // } else {
+            //     return $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // }
             
-            return ($item != null) ? $stmt->fetch(PDO::FETCH_ASSOC) : $stmt->fetchAll(PDO::FETCH_ASSOC);
+            return ($item != null && $item != "teacher_id") ? $stmt->fetch(PDO::FETCH_ASSOC) : $stmt->fetchAll(PDO::FETCH_ASSOC);
             
         } catch (PDOException $e) {
             error_log("Error en mdlMostrarDisponibilidadesProfesores: " . $e->getMessage());
@@ -238,7 +249,7 @@ class ModeloProfesores {
                                                                 teacher_id      = :teacher_id,
                                                                 day_of_week     = :day_of_week,
                                                                 start_time      = :start_time,
-                                                                end_time        = :stars
+                                                                end_time        = :end_time
                                                         WHERE   availability_id = :availability_id");
             
             $stmt->bindParam(":availability_id", $datos["teacher_id"], PDO::PARAM_INT);
