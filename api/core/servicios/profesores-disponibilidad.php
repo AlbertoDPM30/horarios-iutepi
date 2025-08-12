@@ -29,13 +29,13 @@ switch ($_SERVER['REQUEST_METHOD']) {
         $respuesta = ControladorProfesores::ctrMostrarDisponibilidadesProfesores($item, $valor);
 
         // Enviamos los datos completos al cliente
-        if ($respuesta['status'] == 200 && $respuesta['success'] == true && $respuesta['data'] != false) {
+        if ($respuesta['data'] == false || $respuesta['data'] == null || empty($respuesta['data'])) {
 
             http_response_code($respuesta["status"]);
             echo json_encode([
                 'status' => $respuesta["status"],
                 'success' => $respuesta["success"],
-                'data' => $respuesta["data"]
+                'message' => "No se encontraron disponibilidades para el profesor."
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
         } else {
@@ -44,8 +44,9 @@ switch ($_SERVER['REQUEST_METHOD']) {
             echo json_encode([
                 'status' => $respuesta["status"],
                 'success' => $respuesta["success"],
-                'message' => $respuesta["message"]
+                'data' => $respuesta["data"]
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
         }
 
         break;

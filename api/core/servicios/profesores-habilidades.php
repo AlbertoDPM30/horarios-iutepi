@@ -8,7 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 switch ($_SERVER['REQUEST_METHOD']) {
     case 'GET':
         /*=============================================
-        OBTENER HABILIDADES DEL PROFESOR
+        OBTENER HABILIDADES DEL PROFESOR (GET)
         =============================================*/
 
         $itemTeacher = null;
@@ -54,7 +54,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'POST':
         /*=============================================
-        REGISTRAR NUEVA HABILIDAD AL PROFESOR
+        REGISTRAR NUEVA HABILIDAD AL PROFESOR (POST)
         =============================================*/
         $datos = json_decode(file_get_contents('php://input'), true);
 
@@ -90,7 +90,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'PUT':
         /*=============================================
-        EDITAR HABILIDAD DEL PROFESOR
+        EDITAR HABILIDAD DEL PROFESOR (PUT)
         =============================================*/
         $datos = json_decode(file_get_contents('php://input'), true);
 
@@ -112,7 +112,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'DELETE':
         /*=============================================
-        ELIMINAR HABILIDAD DEL PROFESOR
+        ELIMINAR HABILIDAD DEL PROFESOR (DELETE)
         =============================================*/
         if (!isset($_GET['teacher_skill_id'])) {
             

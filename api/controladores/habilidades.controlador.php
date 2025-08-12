@@ -209,7 +209,7 @@ class ControladorHabilidades {
     static public function ctrMostrarHabilidadesProfesores($item1 = null,  $item2 = null, $valor1 = null, $valor2 = null) {
         try {
             $respuesta = ModeloHabilidades::mdlMostrarHabilidadesProfesores("teacher_skills", $item1, $valor1, $item2, $valor2);
-            
+
             return [
                 "status" => 200,
                 "success" => true,
@@ -468,7 +468,7 @@ class ControladorHabilidades {
                     return [
                         "status" => 201,
                         "success" => true,
-                        "message" => "Habilidad asignada exitosamente al materia",
+                        "message" => "Habilidad asignada exitosamente a la materia",
                         "data" => [
                             "materia" => $respuestaMateria['name'],
                             "habilidad" => $respuestaHabilidad['skill_name'],

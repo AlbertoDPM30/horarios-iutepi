@@ -8,6 +8,7 @@ require_once "controladores/estudiantes.controlador.php"; // controlador de estu
 require_once "controladores/profesores.controlador.php"; // controlador de profesores
 require_once "controladores/habilidades.controlador.php"; // controlador de habilidades
 require_once "controladores/materias.controlador.php"; // controlador de materias
+require_once "controladores/horarios.controlador.php"; // controlador de materias
 require_once "controladores/router.controlador.php"; // controlador del enrutador
 
 /*=============================================
