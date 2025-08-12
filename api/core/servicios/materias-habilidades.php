@@ -18,9 +18,14 @@ switch ($metodo) {
         $item = null;
         $valor = null;
 
-        if (isset($_GET['id'])) {
-            $item = "skill_id";
-            $valor = $_GET['id'];
+        if (isset($_GET['subject_skill_id'])) {
+            $item = "subject_skill_id";
+            $valor = $_GET['subject_skill_id'];
+        }
+
+        if (isset($_GET['subject_id'])) {
+            $item = "subject_id";
+            $valor = $_GET['subject_id'];
         }
 
         // Llamar al método del controlador
@@ -34,20 +39,22 @@ switch ($metodo) {
     CREAR NUEVA HABILIDAD (POST)
     =============================================*/
     case 'POST':
-        // Validar que el campo 'subject_skill_id' no esté vacío
-        if (empty($entrada['subject_skill_id'])) {
+        // Validar que el campo 'skill_id' y el campo 'subject_id' no estén vacíos
+        if (empty($entrada['skill_id']) || empty($entrada['subject_id'])) {
             http_response_code(400); 
             echo json_encode([
                 "status" => 400,
                 "success" => false,
-                "message" => "El campo 'subject_skill_id' es obligatorio para crear una habilidad de la materia."
+                "message" => "El campo 'skill_id' y 'subject_id' son obligatorios para crear la habilidad de una materia."
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             break; 
         }
         
         // Los datos a enviar al controlador
         $datosParaCrear = [
-            'subject_skill_id' => $entrada['subject_skill_id']
+            'subject_id' => $entrada['subject_id'],
+            'skill_id' => $entrada['skill_id'],
+            'min_stars' => $entrada['min_stars'],
         ];
         
         // Llamar al método del controlador para crear la habilidad de la materia
@@ -78,7 +85,10 @@ switch ($metodo) {
         
         // Los datos a enviar al controlador
         $datosParaActualizar = [
-            'subject_skill_id' => $entrada['subject_skill_id']
+            'subject_skill_id' => $entrada['subject_skill_id'],
+            'subject_id' => $entrada['subject_id'],
+            'skill_id' => $entrada['skill_id'],
+            'min_stars' => $entrada['min_stars']
         ];
         
         // Llamar al método del controlador para actualizar la habilidad de la materia
@@ -110,7 +120,7 @@ switch ($metodo) {
         $idToDelete = $_GET['subject_skill_id'];
         
         // Llamar al método del controlador para eliminar la habilidad
-        $response = ControladorHabilidades::ctrEliminarHabilidad($idToDelete);
+        $response = ControladorHabilidades::ctrEliminarMateriasHabilidad($idToDelete);
         
         if ($response['success']) {
             http_response_code(200); 

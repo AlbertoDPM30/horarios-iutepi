@@ -417,7 +417,7 @@ class ControladorHabilidades {
     =============================================*/
     static public function ctrMostrarMateriasHabilidades($item = null,  $valor = null) {
         try {
-            $respuesta = ModeloHabilidades::mdlMostrarMateriasHabilidades("teacher_skills", $item, $valor);
+            $respuesta = ModeloHabilidades::mdlMostrarMateriasHabilidades("subject_skills", $item, $valor);
             
             return [
                 "status" => 200,
@@ -426,7 +426,7 @@ class ControladorHabilidades {
             ];
             
         } catch (PDOException $e) {
-            error_log("Error en ctrMostrarHabilidades: " . $e->getMessage());
+            error_log("Error en ctrMostrarMateriasHabilidades: " . $e->getMessage());
             return [
                 "status" => 500,
                 "success" => false,
@@ -456,7 +456,7 @@ class ControladorHabilidades {
                 "min_stars" => trim($datos['min_stars'])
             ];
 
-            $resultado = ModeloHabilidades::mdlCrearHabilidadProfesor("teacher_skills", $datos);
+            $resultado = ModeloHabilidades::mdlCrearMateriasHabilidad("subject_skills", $datos);
 
             if ($resultado === "ok") {
 
@@ -470,7 +470,7 @@ class ControladorHabilidades {
                         "success" => true,
                         "message" => "Habilidad asignada exitosamente al materia",
                         "data" => [
-                            "materia" => $respuestaMateria['data']['name'],
+                            "materia" => $respuestaMateria['name'],
                             "habilidad" => $respuestaHabilidad['skill_name'],
                             "min_stars" => $datos['min_stars']
                         ]
@@ -488,7 +488,8 @@ class ControladorHabilidades {
                 return [
                     "status" => 500,
                     "success" => false,
-                    "message" => "Error al asignar la habilidad a la materia"
+                    "message" => "Error al asignar la habilidad a la materia",
+                    "error" => $resultado
                 ];
             }
             
@@ -517,7 +518,7 @@ class ControladorHabilidades {
             }
 
             // Verificar si la habilidad está asignada a la materia
-            $habilidad = ModeloHabilidades::mdlMostrarMateriasHabilidades("subjects_skills", "subject_skill_id", $datos['subject_skill_id']);
+            $habilidad = ModeloHabilidades::mdlMostrarMateriasHabilidades("subject_skills", "subject_skill_id", $datos['subject_skill_id']);
             if (!$habilidad) {
                 return [
                     "status" => 404,
@@ -534,7 +535,7 @@ class ControladorHabilidades {
                 "min_stars" => $datos['min_stars']
             ];
 
-            $resultado = ModeloHabilidades::mdlEditarMateriasHabilidad("teacher_skills", $datos);
+            $resultado = ModeloHabilidades::mdlEditarMateriasHabilidad("subject_skills", $datos);
 
             $respuestaMateria = ModeloMaterias::mdlMostrarMaterias("subjects", "subject_id", $datos['subject_id']);
             $respuestaHabilidad = ModeloHabilidades::mdlMostrarHabilidades("skills", "skill_id", $datos['skill_id']);
@@ -545,7 +546,7 @@ class ControladorHabilidades {
                     "success" => true,
                     "message" => "Habilidad de la materia actualizada exitosamente",
                     "data" => [
-                        "materia" => $respuestaMateria['data']['name'],
+                        "materia" => $respuestaMateria['name'],
                         "habilidad" => $respuestaHabilidad['skill_name'],
                         "min_stars" => $datos['min_stars']
                     ]
@@ -571,10 +572,10 @@ class ControladorHabilidades {
     /*=============================================
     ELIMINAR HABILIDAD DE LA MATERIA
     =============================================*/
-    static public function ctrEliminarMateriasHabilidad($teacher_skill_id) {
+    static public function ctrEliminarMateriasHabilidad($subject_skill_id) {
         try {
             // Validar ID
-            if (empty($teacher_skill_id)) {
+            if (empty($subject_skill_id)) {
                 return [
                     "status" => 400,
                     "success" => false,
@@ -583,7 +584,7 @@ class ControladorHabilidades {
             }
 
             // Verificar si la habilidad existe
-            $habilidad = ModeloHabilidades::mdlMostrarMateriasHabilidades("subjects_skills", "subject_skill_id", $subject_skill_id);
+            $habilidad = ModeloHabilidades::mdlMostrarMateriasHabilidades("subject_skills", "subject_skill_id", $subject_skill_id);
             if (!$habilidad) {
                 return [
                     "status" => 404,
@@ -593,7 +594,7 @@ class ControladorHabilidades {
             }
 
             // Eliminar la habilidad
-            $resultado = ModeloHabilidades::mdlEliminarMateriasHabilidad("subjects_skills", $subject_skill_id);
+            $resultado = ModeloHabilidades::mdlEliminarMateriasHabilidad("subject_skills", $subject_skill_id);
 
             if ($resultado === "ok") {
                 return [
@@ -605,8 +606,7 @@ class ControladorHabilidades {
                 return [
                     "status" => 500,
                     "success" => false,
-                    "message" => "Error al eliminar la habilidad",
-                    "resultado" => $resultado
+                    "message" => "Error al eliminar la habilidad"
                 ];
             }
             

@@ -184,17 +184,6 @@ class ModeloProfesores {
             
             $stmt->execute();
 
-            // if ($item != null && $item != "teacher_id") {
-            //     return $stmt->fetch(PDO::FETCH_ASSOC);
-
-            // }elseif ($item == "teacher_id") {
-            //     return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // } else {
-            //     return $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-            // }
-            
             return ($item != null && $item != "teacher_id") ? $stmt->fetch(PDO::FETCH_ASSOC) : $stmt->fetchAll(PDO::FETCH_ASSOC);
             
         } catch (PDOException $e) {
