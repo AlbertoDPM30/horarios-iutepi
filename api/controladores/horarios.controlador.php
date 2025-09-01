@@ -116,14 +116,18 @@ class ControladorGenerarHorarios {
                 $dias_con_materia = [];
                 $disponibilidad_ordenada = $profesor['disponibilidad'];
                 
+                // Ordenar por el día de la semana para asegurar una distribución equitativa.
                 usort($disponibilidad_ordenada, function($a, $b) {
-                    return (strtotime($a['start_time']) - strtotime($b['start_time']));
+                    $dias_semana = ['Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6, 'Domingo' => 7];
+                    return $dias_semana[$a['day_of_week']] <=> $dias_semana[$b['day_of_week']];
                 });
 
                 foreach ($disponibilidad_ordenada as $disponibilidad) {
                     if ($horasAcademicasRestantes <= 0) break;
                     
                     $dia = $disponibilidad['day_of_week'];
+                    
+                    // Evitar asignar más de un bloque de la misma materia el mismo día.
                     if (in_array($dia, $dias_con_materia)) {
                         continue;
                     }
@@ -131,13 +135,14 @@ class ControladorGenerarHorarios {
                     $inicioMinutosDia = strtotime($disponibilidad['start_time']) / 60;
                     $finMinutosDia = strtotime($disponibilidad['end_time']) / 60;
 
-                    for ($i = $inicioMinutosDia; $i + $duracionBloqueMinutos <= $finMinutosDia; $i += $duracionBloqueMinutos) {
+                    for ($i = $inicioMinutosDia; $i + $duracionBloqueMinutos <= $finMinutosDia; $i += $MINUTOS_POR_HORA_ACADEMICA) {
                         if ($horasAcademicasRestantes <= 0) break;
-
+                        
                         $horaInicio = date('H:i', $i * 60);
                         $horaFin = date('H:i', ($i + $duracionBloqueMinutos) * 60);
                         
                         $ranuraLibre = true;
+                        // Verificar si hay una clase existente en esta franja horaria.
                         if (isset($profesor['horario_detallado'][$dia])) {
                             foreach ($profesor['horario_detallado'][$dia] as $claseExistente) {
                                 $inicioExistente = strtotime($claseExistente['inicio']) / 60;
@@ -151,6 +156,7 @@ class ControladorGenerarHorarios {
 
                         if ($ranuraLibre) {
                             $horas_ya_asignadas = array_sum(array_column($profesor['materias_asignadas'], 'horas_semana'));
+                            // Verificar si el profesor tiene suficientes horas disponibles.
                             if ($horas_ya_asignadas + $horasAcademicasPorBloque > $profesor['horas_disponibles_semana']) {
                                 continue;
                             }
