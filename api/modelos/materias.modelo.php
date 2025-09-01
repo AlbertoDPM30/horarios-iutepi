@@ -14,7 +14,7 @@ class ModeloMaterias {
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC); // Obtener un solo registro
         } else {
-            $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
+            $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla ORDER BY name ASC");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC); // Obtener todos los registros
         }

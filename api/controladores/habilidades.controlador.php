@@ -215,7 +215,7 @@ class ControladorHabilidades {
                 "success" => true,
                 "data" => $respuesta
             ];
-            
+        
         } catch (PDOException $e) {
             error_log("Error en ctrMostrarHabilidades: " . $e->getMessage());
             return [

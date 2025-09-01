@@ -3,29 +3,6 @@
 class ControladorGenerarHorarios {
 
     /*=============================================
-    MOSTRAR HABILIDAD(ES)
-    =============================================*/
-    /* static public function ctrMostrarHabilidades($item = null, $valor = null) {
-        try {
-            $respuesta = ModeloHabilidades::mdlMostrarHabilidades("skills", $item, $valor);
-            
-            return [
-                "status" => 200,
-                "success" => true,
-                "data" => $respuesta
-            ];
-            
-        } catch (PDOException $e) {
-            error_log("Error en ctrMostrarHabilidades: " . $e->getMessage());
-            return [
-                "status" => 500,
-                "success" => false,
-                "message" => "Error al obtener habilidades"
-            ];
-        }
-    } */
-
-    /*=============================================
     GENERAR HORARIO DE LA SEMANA DE PROFESORES
     =============================================*/
     static public function ctrGenerarHorariosProfesoresSemana() {

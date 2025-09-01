@@ -287,7 +287,7 @@ class ModeloHabilidades {
     }
 
     /*=============================================
-    EDITAR HABILIDAD DEL PROFESOR (PUT)
+    EDITAR HABILIDAD DE LA MATERIA (PUT)
     =============================================*/
     static public function mdlEditarMateriasHabilidad($tabla, $datos) {
         try {
@@ -316,7 +316,7 @@ class ModeloHabilidades {
     }
 
     /*=============================================
-    ELIMINAR HABILIDAD (DELETE)
+    ELIMINAR HABILIDAD DE LA MATERIA (DELETE)
     =============================================*/
     static public function mdlEliminarMateriasHabilidad($tabla, $subject_skill_id) {
         try {
