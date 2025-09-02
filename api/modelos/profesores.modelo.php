@@ -241,7 +241,7 @@ class ModeloProfesores {
                                                                 end_time        = :end_time
                                                         WHERE   availability_id = :availability_id");
             
-            $stmt->bindParam(":availability_id", $datos["teacher_id"], PDO::PARAM_INT);
+            $stmt->bindParam(":availability_id", $datos["availability_id"], PDO::PARAM_INT);
             $stmt->bindParam(":teacher_id", $datos["teacher_id"], PDO::PARAM_INT);
             $stmt->bindParam(":day_of_week", $datos["day_of_week"], PDO::PARAM_STR);
             $stmt->bindParam(":start_time", $datos["start_time"], PDO::PARAM_STR);
@@ -278,4 +278,204 @@ class ModeloProfesores {
             }
         }
     }
+    
+    /*====================== MATERIAS =======================*/
+
+    /*=============================================
+    ELIMINAR ASIGNACIONES DE MATERIAS POR PROFESOR
+    =============================================*/
+    public static function mdlEliminarMateriaProfesor($tabla, $item, $valor) {
+        $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE $item = :$item");
+        $stmt->bindParam(":" . $item, $valor, PDO::PARAM_INT);
+        return $stmt->execute();
+        $stmt = null;
+    }
+
+    /*=============================================
+    VERIFICAR ASIGNACIÓN EXISTENTE
+    =============================================*/
+    public static function mdlVerificarAsignacionExistente($tabla, $teacher_id, $subject_id) {
+        $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE teacher_id = :teacher_id AND subject_id = :subject_id");
+        $stmt->bindParam(":teacher_id", $teacher_id, PDO::PARAM_INT);
+        $stmt->bindParam(":subject_id", $subject_id, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetch();
+        $stmt = null;
+    }
+
+    /*=============================================
+    CREAR ASIGNACIÓN DE MATERIA A PROFESOR
+    =============================================*/
+    public static function mdlCrearAsignacionMateriaProfesor($tabla, $datos) {
+        $stmt = Conexion::conectar()->prepare("INSERT INTO $tabla(teacher_id, subject_id) VALUES (:teacher_id, :subject_id)");
+        $stmt->bindParam(":teacher_id", $datos["teacher_id"], PDO::PARAM_INT);
+        $stmt->bindParam(":subject_id", $datos["subject_id"], PDO::PARAM_INT);
+        if ($stmt->execute()) {
+            return "ok";
+        } else {
+            return "error";
+        }
+        $stmt = null;
+    }
+    
+    /*=============================================
+    MOSTRAR MATERIAS DEL PROFESOR (GET)
+    =============================================*/
+    static public function mdlMostrarMateriasProfesores($tabla, $item = null, $valor = null) {
+        try {
+            if ($item != null && $item !== "teacher_id") {
+
+                // Obtener una Disponibilidad específica
+                $stmt = Conexion::conectar()->prepare("SELECT
+                                                            pm.assignment_id,
+                                                            pm.teacher_id,
+                                                            pm.subject_id,
+                                                            p.name as teacher_name,
+                                                            m.name as subject_name
+                                                        FROM $tabla as pm 
+                                                        LEFT JOIN subjects as m
+                                                        ON m.subject_id = pm.subject_id
+                                                        LEFT JOIN teachers as p
+                                                        ON p.teacher_id = pm.teacher_id
+                                                        pm.$item = :valor");
+
+                $stmt->bindParam(":valor", $valor, PDO::PARAM_STR);
+
+            } elseif ($item == "teacher_id") {
+                
+                    // Obtener todas las Materias de un profesor
+                    $stmt = Conexion::conectar()->prepare("SELECT
+                                                                pm.assignment_id,
+                                                                pm.teacher_id,
+                                                                pm.subject_id,
+                                                                p.name as teacher_name,
+                                                                m.name as subject_name
+                                                            FROM $tabla as pm 
+                                                            LEFT JOIN subjects as m
+                                                            ON m.subject_id = pm.subject_id
+                                                            LEFT JOIN teachers as p
+                                                            ON p.teacher_id = pm.teacher_id
+                                                            WHERE pm.$item = :valor ORDER BY pm.assignment_id DESC");
+
+                    $stmt->bindParam(":valor", $valor, PDO::PARAM_STR);
+
+                } else {
+                // Obtener todas las Materias
+                $stmt = Conexion::conectar()->prepare("SELECT
+                                                        pm.assignment_id,
+                                                        pm.teacher_id,
+                                                        pm.subject_id,
+                                                        p.name as teacher_name,
+                                                        m.name as subject_name
+                                                        FROM $tabla as pm 
+                                                        LEFT JOIN subjects as m
+                                                        ON m.subject_id = pm.subject_id
+                                                        LEFT JOIN teachers as p
+                                                        ON p.teacher_id = pm.teacher_id
+                                                        ORDER BY pm.assignment_id DESC");
+            }
+            
+            $stmt->execute();
+
+            return ($item != null && $item != "teacher_id") ? $stmt->fetch(PDO::FETCH_ASSOC) : $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Error en mdlMostrarMateriasProfesores: " . $e->getMessage());
+            return $e->getMessage();
+
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
+
+    // /*=============================================
+    // ASIGNAR MATERIA AL PROFESOR (POST)
+    // =============================================*/
+    // static public function mdlCrearMateriaProfesor($tabla, $datos) {
+    //     try {
+    //         $stmt = Conexion::conectar()->prepare("INSERT INTO  $tabla 
+    //                                                             (teacher_id,
+    //                                                             subject_id,
+    //                                                             day_of_week,
+    //                                                             start_time,
+    //                                                             end_time)
+    //                                                     VALUES  (:teacher_id,
+    //                                                             :subject_id,
+    //                                                             :day_of_week,
+    //                                                             :start_time,
+    //                                                             :end_time)");
+
+    //         $stmt->bindParam(":teacher_id", $datos["teacher_id"], PDO::PARAM_INT);
+    //         $stmt->bindParam(":subject_id", $datos["subject_id"], PDO::PARAM_INT);
+    //         $stmt->bindParam(":day_of_week", $datos["day_of_week"], PDO::PARAM_STR);
+    //         $stmt->bindParam(":start_time", $datos["start_time"], PDO::PARAM_STR);
+    //         $stmt->bindParam(":end_time", $datos["end_time"], PDO::PARAM_STR);
+            
+    //         return ($stmt->execute()) ? "ok" : "error";
+            
+    //     } catch (PDOException $e) {
+    //         error_log("Error en mdlCrearMateriaProfesor: " . $e->getMessage());
+    //         return "error";
+    //     } finally {
+    //         if ($stmt) {
+    //             $stmt = null;
+    //         }
+    //     }
+    // }
+
+    // /*=============================================
+    // EDITAR MATERIA DEL PROFESOR (PUT / PATCH)
+    // =============================================*/
+    // static public function mdlEditarMateriaProfesor($tabla, $datos) {
+    //     try {
+    //         $stmt = Conexion::conectar()->prepare("UPDATE $tabla SET 
+    //                                                             teacher_id      = :teacher_id,
+    //                                                             subject_id      = :subject_id,
+    //                                                             day_of_week     = :day_of_week,
+    //                                                             start_time      = :start_time,
+    //                                                             end_time        = :end_time
+    //                                                     WHERE   assignment_id   = :assignment_id");
+            
+    //         $stmt->bindParam(":assignment_id", $datos["assignment_id"], PDO::PARAM_INT);
+    //         $stmt->bindParam(":subject_id", $datos["subject_id"], PDO::PARAM_INT);
+    //         $stmt->bindParam(":teacher_id", $datos["teacher_id"], PDO::PARAM_INT);
+    //         $stmt->bindParam(":day_of_week", $datos["day_of_week"], PDO::PARAM_STR);
+    //         $stmt->bindParam(":start_time", $datos["start_time"], PDO::PARAM_STR);
+    //         $stmt->bindParam(":end_time", $datos["end_time"], PDO::PARAM_STR);
+            
+    //         return ($stmt->execute()) ? "ok" : "error";
+            
+    //     } catch (PDOException $e) {
+    //         error_log("Error en mdlEditarMateriaProfesor: " . $e->getMessage());
+    //         return "error";
+    //     } finally {
+    //         if ($stmt) {
+    //             $stmt = null;
+    //         }
+    //     }
+    // }
+
+    // /*=============================================
+    // ELIMINAR MATERIA DEL PROFESOR (DELETE)
+    // =============================================*/
+    // static public function mdlEliminarMateriaProfesor($tabla, $assignment_id) {
+    //     try {
+    //         $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE assignment_id = :assignment_id");
+    //         $stmt->bindParam(":assignment_id", $assignment_id, PDO::PARAM_INT);
+            
+    //         return ($stmt->execute()) ? "ok" : "error";
+            
+    //     } catch (PDOException $e) {
+    //         error_log("Error en mdlEliminarMateriaProfesor: " . $e->getMessage());
+    //         return "error";
+    //     } finally {
+    //         if ($stmt) {
+    //             $stmt = null;
+    //         }
+    //     }
+    // }
+
+
 }

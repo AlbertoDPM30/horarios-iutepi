@@ -73,6 +73,10 @@ class ModeloMaterias {
                 $setClauses[] = "semester = :semester";
                 $bindParams[":semester"] = $datos['semester'];
             }
+            if (isset($datos['is_assigned'])) {
+                $setClauses[] = "is_assigned = :is_assigned";
+                $bindParams[":is_assigned"] = $datos['is_assigned'];
+            }
 
             // Establecer la zona horaria y obtener la fecha actual para updated_at
             date_default_timezone_set('America/Caracas');

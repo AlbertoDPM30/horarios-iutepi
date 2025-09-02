@@ -1,67 +1,47 @@
 <?php
 
-/*=============================================
-ENDPOINT PARA GESTIONAR HORARIOS Y PROFESORES
-=============================================*/
-header('Content-Type: application/json; charset=utf-8');
+$requestMethod = $_SERVER['REQUEST_METHOD'];
+$requestUri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+$pathSegments = explode('/', trim($requestUri, '/'));
 
-switch ($_SERVER['REQUEST_METHOD']) {
-    case 'GET':
-        /*=============================================
-        OBTENER LISTA DE PROFESORES (GET)
-        =============================================*/
-        try {
-            // Llama a la función del controlador que obtiene la lista de todos los profesores
-            $respuesta = ControladorProfesores::ctrMostrarProfesores(null, null);
+$resource = end($pathSegments);
 
-            // Responde con la lista de profesores o un mensaje de error
-            http_response_code($respuesta['status']);
-            echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        } catch (Exception $e) {
-            http_response_code(500);
-            echo json_encode([
-                "status" => 500,
-                "success" => false,
-                "message" => "Error del servidor: " . $e->getMessage()
-            ]);
-        }
+if ($requestMethod == 'OPTIONS') {
+    http_response_code(200);
+    exit;
+}
+
+switch ($resource) {
+    case 'profesores':
+        $profesores = ModeloProfesores::mdlMostrarProfesores("teachers", null, null);
+        echo json_encode(["status" => 200, "success" => true, "data" => $profesores]);
         break;
 
-    case 'POST':
-        /*=============================================
-        GENERAR HORARIO DE UN PROFESOR INDIVIDUAL (POST)
-        =============================================*/
-        $data = json_decode(file_get_contents('php://input'), true);
+    case 'profesores-materias':
+        $response = [];
+        if ($requestMethod === "GET") {
+            $profesorId = isset($_GET['teacher_id']) ? $_GET['teacher_id'] : null;
+            $response = ControladorAsignacion::ctrMostrarMateriasElegibles($profesorId);
 
-        // Validar que se ha enviado el ID del profesor
-        if (!isset($data['teacher_id'])) {
-            http_response_code(400);
-            echo json_encode([
-                "status" => 400,
+        } elseif ($requestMethod === "POST") {
+            $data = json_decode(file_get_contents("php://input"), true);
+            $profesorId = isset($data['teacher_id']) ? $data['teacher_id'] : null;
+            $subjectIds = isset($data['subject_ids']) ? $data['subject_ids'] : [];
+            $response = ControladorAsignacion::ctrGuardarAsignaciones($profesorId, $subjectIds);
+
+        } else {
+            http_response_code(405);
+            $response = [
+                "status" => 405,
                 "success" => false,
-                "message" => "ID de profesor no proporcionado en el cuerpo de la petición."
-            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            break;
+                "message" => "Método no permitido."
+            ];
         }
-
-        $profesorId = $data['teacher_id'];
-
-        // Llama al nuevo método del controlador que genera un horario para un profesor
-        $horarioProfesor = ControladorGenerarHorarios::ctrGenerarHorarioProfesorIndividual($profesorId);
-
-        // Responde con el horario o un mensaje de error
-        http_response_code($horarioProfesor['status']);
-        echo json_encode($horarioProfesor, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        
+        echo json_encode($response);
         break;
 
     default:
-        // Método no permitido
-        http_response_code(405);
-        echo json_encode([
-            "status" => 405,
-            "success" => false,
-            "message" => "Método no permitido para esta ruta."
-        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        http_response_code(404);
+        echo json_encode(["status" => 404, "success" => false, "message" => "Recurso no encontrado."]);
         break;
 }

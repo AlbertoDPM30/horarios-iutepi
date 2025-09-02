@@ -87,6 +87,13 @@ if (isset($ruta)) {
             include "servicios/materias-habilidades.php"; 
             break;
 
+        case "materias-asignadas":
+        case "generar-horario":
+        case "confirmar-horario":
+            AuthMiddleware::handle();
+            include "servicios/profesores-horarios.php"; 
+            break;
+
         case "profesores-materias":
             AuthMiddleware::handle();
             include "servicios/profesores-materias.php"; 

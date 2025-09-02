@@ -370,4 +370,208 @@ class ControladorProfesores {
             ];
         }
     }
+    
+    // /*===================== MATERIAS ========================*/
+
+    // /*=============================================
+    // MOSTRAR MATERIAS DE UN PROFESOR
+    // =============================================*/
+    // static public function ctrMostrarMateriasProfesores($item = null,  $valor = null) {
+    //     try {
+    //         $respuesta = ModeloProfesores::mdlMostrarMateriasProfesores("teacher_subject_assignment", $item, $valor);
+            
+    //         return [
+    //             "status" => 200,
+    //             "success" => true,
+    //             "data" => $respuesta
+    //         ];
+            
+    //     } catch (PDOException $e) {
+    //         error_log("Error en ctrMostrarMateriasProfesor: " . $e->getMessage());
+    //         return [
+    //             "status" => 500,
+    //             "success" => false,
+    //             "message" => "Error al obtener la Materia",
+    //         ];
+    //     }
+    // }
+
+    // /*=============================================
+    // CREAR MATERIA
+    // =============================================*/
+    // static public function ctrCrearMateriaProfesor($datos) {
+    //     try {
+    //         // Validar que el id no estén vacío
+    //         if (empty($datos['teacher_id'])) {
+    //             return [
+    //                 "status" => 400,
+    //                 "success" => false,
+    //                 "message" => "El 'id' del profesor es requerido"
+    //             ];
+    //         }
+
+    //         // Crear la Disponobilidad
+    //         $datos = [
+    //             "teacher_id" => trim($datos['teacher_id']),
+    //             "day_of_week" => trim($datos['day_of_week']),
+    //             "start_time" => trim($datos['start_time']),
+    //             "end_time" => trim($datos['end_time'])
+    //         ];
+
+    //         $resultado = ModeloProfesores::mdlCrearMateriaProfesor("teacher_subject_assignment", $datos);
+
+    //         if ($resultado === "ok") {
+
+    //             // Validar si el profesor existe
+    //             $respuestaProfesor = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $datos['teacher_id']);
+
+    //             if (!empty($respuestaProfesor)) {
+
+    //                 return [
+    //                     "status" => 201,
+    //                     "success" => true,
+    //                     "message" => "Materia asignada exitosamente al profesor",
+    //                     "data" => [
+    //                         "profesor" => $respuestaProfesor['data']['name'],
+    //                         "dia_semana" => $datos['day_of_week'],
+    //                         "hora_inicio" => $datos['start_time'],
+    //                         "hora_final" => $datos['end_time']
+    //                     ]
+    //                 ];
+
+    //             } else {
+                    
+    //                 return [
+    //                     "status" => 201,
+    //                     "success" => true,
+    //                     "message" => "Materia asignada exitosamente al profesor",
+    //                     "warning" => "No DATA, reporte con un administrador"
+    //                 ];
+    //             }
+    //         } else {
+
+    //             return [
+    //                 "status" => 500,
+    //                 "success" => false,
+    //                 "message" => "Error al registrar la Materia"
+    //             ];
+    //         }
+            
+    //     } catch (PDOException $e) {
+    //         error_log("Error en ctrCrearMateriaProfesor: " . $e->getMessage());
+    //         return [
+    //             "status" => 500,
+    //             "success" => false,
+    //             "message" => "Error del servidor al asignar la habilidad al profesor"
+    //         ];
+    //     }
+    // }
+
+    // /*=============================================
+    // ACTUALIZAR MATERIA DEL PROFESOR
+    // ==============================================*/
+    // static public function ctrEditarMateriaProfesor($datos) {
+    //     try {
+    //         // Validar datos de entrada
+    //         if (empty($datos['assignment_id'])) {
+    //             return [
+    //                 "status" => 400,
+    //                 "success" => false,
+    //                 "message" => "ID de la Materia es requerido"
+    //             ];
+    //         }
+
+    //         // Actualizar la habilidad del profesor
+    //         $datos = [
+    //             "assignment_id" => $datos['assignment_id'],
+    //             "teacher_id" => $datos['teacher_id'],
+    //             "day_of_week" => $datos['day_of_week'],
+    //             "start_time" => $datos['start_time'],
+    //             "end_time" => $datos['end_time']
+    //         ];
+
+    //         $resultado = ModeloProfesores::mdlEditarMateriaProfesor("teacher_subject_assignment", $datos);
+
+    //         $respuestaProfesor = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $datos['teacher_id']);
+
+    //         if ($resultado === "ok") {
+    //             return [
+    //                 "status" => 200,
+    //                 "success" => true,
+    //                 "message" => "Habilidad del profesor actualizada exitosamente",
+    //                 "data" => [
+    //                     "profesor" => $respuestaProfesor['data']['name'],
+    //                     "dia_semana" => $datos['day_of_week'],
+    //                     "hora_inicio" => $datos['start_time'],
+    //                     "hora_start" => $datos['end_time']
+    //                 ]
+    //             ];
+    //         } else {
+    //             return [
+    //                 "status" => 500,
+    //                 "success" => false,
+    //                 "message" => "Error al actualizar la Materia"
+    //             ];
+    //         }
+            
+    //     } catch (PDOException $e) {
+    //         error_log("Error en ctrEditarMateriaProfesor: " . $e->getMessage());
+    //         return [
+    //             "status" => 500,
+    //             "success" => false,
+    //             "message" => "Error del servidor al actualizar Materia"
+    //         ];
+    //     }
+    // }
+
+    // /*=============================================
+    // ELIMINAR MATERIA DEL PROFESOR
+    // =============================================*/
+    // static public function ctrEliminarMateriaProfesor($assignment_id) {
+    //     try {
+    //         // Validar ID
+    //         if (empty($assignment_id)) {
+    //             return [
+    //                 "status" => 400,
+    //                 "success" => false,
+    //                 "message" => "ID es requerido"
+    //             ];
+    //         }
+
+    //         // Verificar si la Materia existe
+    //         $Materia = ModeloProfesores::mdlMostrarMateriasProfesores("teacher_subject_assignment", "assignment_id", $assignment_id);
+    //         if (!$Materia) {
+    //             return [
+    //                 "status" => 404,
+    //                 "success" => false,
+    //                 "message" => "Materia no encontrada"
+    //             ];
+    //         }
+
+    //         // Eliminar la Materia del profesor
+    //         $resultado = ModeloProfesores::mdlEliminarMateriaProfesor("teacher_subject_assignment", $assignment_id);
+
+    //         if ($resultado === "ok") {
+    //             return [
+    //                 "status" => 200,
+    //                 "success" => true,
+    //                 "message" => "Materia eliminada del profesor exitosamente"
+    //             ];
+    //         } else {
+    //             return [
+    //                 "status" => 500,
+    //                 "success" => false,
+    //                 "message" => "Error al eliminar la Materia"
+    //             ];
+    //         }
+            
+    //     } catch (PDOException $e) {
+    //         error_log("Error en ctrEliminarMateriaProfesor: " . $e->getMessage());
+    //         return [
+    //             "status" => 500,
+    //             "success" => false,
+    //             "message" => "Error del servidor al eliminar la Materia"
+    //         ];
+    //     }
+    // }
 }

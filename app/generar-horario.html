@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generar Horario</title>
+    <link rel="stylesheet" href="public/css/horarios.css">
+</head>
+
+<body>
+
+    <div class="container">
+        <h1>Generar Horario de Profesor</h1>
+
+        <!-- Controles de selección -->
+        <div class="controls">
+            <div class="select-wrapper">
+                <label for="teacher-select">Seleccione un profesor:</label>
+                <select id="teacher-select">
+                    <option value="" disabled selected>Cargando profesores...</option>
+                </select>
+            </div>
+            <button id="generate-schedule-btn" class="btn btn-blue">
+                Generar Horario
+            </button>
+        </div>
+
+        <!-- Secciones de visualización -->
+        <div class="display-sections">
+            <!-- Materias Asignadas -->
+            <div class="assigned-subjects">
+                <h2>Materias Asignadas</h2>
+                <div id="assigned-subjects-list" class="subject-list">
+                    <p>Seleccione un profesor para ver sus materias asignadas.</p>
+                </div>
+            </div>
+
+            <!-- Contenedor del Horario -->
+            <div id="schedule-container" class="schedule-container hidden">
+                <h2>Horario Provisional</h2>
+                <div id="schedule-table-container" class="schedule-table-wrapper">
+                    <!-- La tabla del horario se renderizará aquí -->
+                </div>
+                <button id="confirm-schedule-btn" class="btn btn-green">
+                    Confirmar Horario
+                </button>
+            </div>
+        </div>
+
+        <!-- Mensajes de estado -->
+        <div id="status-message" class="status-message"></div>
+
+    </div>
+
+    <script src="public/js/generar-horario.js"></script>
+</body>
+
+</html>
