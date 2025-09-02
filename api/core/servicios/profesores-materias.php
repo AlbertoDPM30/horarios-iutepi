@@ -1,86 +1,59 @@
 <?php
 
 /*=============================================
-ENDPOINT DE PROFESORES-HABILIDADES
+ENDPOINT PARA GESTIONAR HORARIOS Y PROFESORES
 =============================================*/
 header('Content-Type: application/json; charset=utf-8');
 
 switch ($_SERVER['REQUEST_METHOD']) {
     case 'GET':
         /*=============================================
-        OBTENER HORARIO DEL PROFESOR (GET)
+        OBTENER LISTA DE PROFESORES (GET)
         =============================================*/
+        try {
+            // Llama a la función del controlador que obtiene la lista de todos los profesores
+            $respuesta = ControladorProfesores::ctrMostrarProfesores(null, null);
 
-        $itemSubject = null;
-        $valorSubject = null;
-        $itemTeacher = null;
-        $valorTeacher = null;
-        $itemSkill = null;
-        $valorSkill = null;
-
-        if (isset($_GET['is_saturday']) && $_GET['is_saturday'] == 'true') {
-
-            $respuesta = ControladorGenerarHorarios::ctrMostrarHabilidadesProfesores($itemTeacher, $itemSkill, $valorTeacher, $valorSkill);
-            $itemTeacher = "teacher_id";
-            $valorTeacher = $_GET['teacher_id'];
+            // Responde con la lista de profesores o un mensaje de error
+            http_response_code($respuesta['status']);
+            echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode([
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor: " . $e->getMessage()
+            ]);
         }
-
-        $respuesta = ControladorHabilidades::ctrMostrarHabilidadesProfesores($itemTeacher, $itemSkill, $valorTeacher, $valorSkill);
-
-        // Se crea un array para almacenar todas las respuestas
-        $all_responses = [];
-
-        // Se recorre el array de resultados
-        foreach ($respuesta['data'] AS $key => $data) {
-            
-            $respuestaProfesor = ControladorProfesores::ctrMostrarProfesores("teacher_id", $data['teacher_id']);
-            $respuestaHabilidad = ControladorHabilidades::ctrMostrarHabilidades("skill_id", $data['skill_id']);
-
-            // Se añade cada conjunto de datos al array
-            $all_responses[] = [
-                "teacher_skill_id" => $data['teacher_skill_id'],
-                "teacher_id" => $data['teacher_id'],
-                "profesor" => $respuestaProfesor['data']["name"],
-                "skill_id" => $data['skill_id'],
-                "habilidad" => $respuestaHabilidad['data']["skill_name"],
-                "stars" => $data['stars']
-            ];
-        }
-
-        // Se envía un solo objeto JSON con todos los datos
-        echo json_encode([
-            "status" => $respuesta["status"],
-            "success" => $respuesta["success"],
-            "data" => $all_responses
-        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         break;
 
     case 'POST':
-            /*=============================================
-            GENERAR HORARIOS DE PROFESORES (POST)
-            =============================================*/
-            $datos = json_decode(file_get_contents('php://input'), true);
+        /*=============================================
+        GENERAR HORARIO DE UN PROFESOR INDIVIDUAL (POST)
+        =============================================*/
+        $data = json_decode(file_get_contents('php://input'), true);
 
-            // Validar campos requeridos
-            if (isset($datos['is_saturday']) && $datos['is_saturday'] === true) {
-
-                // $respuesta = ControladorGenerarHorarios::ctrGenerarHorariosProfesoresSabatino($datos); // Enviar datos al controlador
-                echo json_encode([
-                    "status" => 400,
-                    "success" => false,
-                    "message" => "No se puede generar horarios para el día sábado."
-                ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-                exit;
-                
-            } else {
-
-                $horariosProfesoresSemana = ControladorGenerarHorarios::ctrGenerarHorariosProfesoresSemana();
-
-                http_response_code($horariosProfesoresSemana['status']);
-                echo json_encode($horariosProfesoresSemana, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-            }
-
+        // Validar que se ha enviado el ID del profesor
+        if (!isset($data['teacher_id'])) {
+            http_response_code(400);
+            echo json_encode([
+                "status" => 400,
+                "success" => false,
+                "message" => "ID de profesor no proporcionado en el cuerpo de la petición."
+            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             break;
+        }
+
+        $profesorId = $data['teacher_id'];
+
+        // Llama al nuevo método del controlador que genera un horario para un profesor
+        $horarioProfesor = ControladorGenerarHorarios::ctrGenerarHorarioProfesorIndividual($profesorId);
+
+        // Responde con el horario o un mensaje de error
+        http_response_code($horarioProfesor['status']);
+        echo json_encode($horarioProfesor, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        
+        break;
 
     default:
         // Método no permitido

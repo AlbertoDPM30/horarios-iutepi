@@ -1,210 +1,211 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const generateWeekdayButton = document.getElementById(
-    "generateWeekdayButton"
-  );
+  const apiBaseUrl = "http://localhost/horarios-iutepi/api";
+  const scheduleForm = document.getElementById("scheduleForm");
+  const profesorSelect = document.getElementById("profesorSelect");
+  const generateButton = document.getElementById("generateButton");
   const generateSaturdayButton = document.getElementById(
     "generateSaturdayButton"
-  );
-  const weekdayScheduleContainer = document.getElementById(
-    "weekdayScheduleContainer"
-  );
-  const saturdayScheduleContainer = document.getElementById(
-    "saturdayScheduleContainer"
-  );
+  ); // Nuevo botón
+  const messageContainer = document.getElementById("message");
+  const scheduleContainer = document.getElementById("scheduleContainer");
+  const profesorSchedules = document.getElementById("profesor-schedules");
   const unassignedSubjectsContainer = document.getElementById(
     "unassigned-subjects-container"
   );
-  const messageElement = document.getElementById("message");
+  const unassignedSubjectsList = document.getElementById(
+    "unassigned-subjects-list"
+  );
 
-  const API_ENDPOINT =
-    "http://localhost/horarios-iutepi/api/profesores-materias";
+  const showMessage = (text, type) => {
+    messageContainer.textContent = text;
+    messageContainer.className = `message ${type}`;
+    messageContainer.style.display = "block";
+  };
 
-  // Maneja el clic en el botón de generar horario semanal
-  generateWeekdayButton.addEventListener("click", () => {
-    generateSchedule(false);
-  });
-
-  // Maneja el clic en el botón de generar horario del sábado
-  generateSaturdayButton.addEventListener("click", () => {
-    generateSchedule(true);
-  });
-
-  /**
-   * Muestra un mensaje en la interfaz de usuario.
-   * @param {string} text - El texto del mensaje.
-   * @param {string} type - El tipo de mensaje ('success', 'error', 'info').
-   */
-  function showMessage(text, type) {
-    messageElement.textContent = text;
-    messageElement.className = `message ${type}`;
-    messageElement.style.display = "block";
-  }
-
-  /**
-   * Limpia los contenedores de horario y mensajes.
-   */
-  function clearResults() {
-    messageElement.style.display = "none";
-    weekdayScheduleContainer.style.display = "none";
-    saturdayScheduleContainer.style.display = "none";
-    unassignedSubjectsContainer.style.display = "none";
-    document.getElementById("profesor-schedules-weekday").innerHTML = "";
-    document.getElementById("profesor-schedules-saturday").innerHTML = "";
-    document.getElementById("unassigned-subjects-list").innerHTML = "";
-  }
-
-  /**
-   * Realiza la llamada a la API para generar el horario.
-   * @param {boolean} isSaturday - Indica si se debe generar el horario del sábado.
-   */
-  async function generateSchedule(isSaturday) {
-    clearResults();
-    showMessage("Generando horarios...", "info");
-
-    // Obtener el token del localStorage
+  const fetchProfessors = async () => {
     const authToken = localStorage.getItem("authToken");
-
-    // Si no hay token, mostrar un error y detener la ejecución
     if (!authToken) {
       showMessage(
-        "Error: No se encontró el token de autenticación. Por favor, inicie sesión nuevamente.",
+        "Error: No se encontró el token de autenticación. Por favor, inicie sesión.",
         "error"
       );
       return;
     }
 
     try {
-      const response = await fetch(API_ENDPOINT, {
+      const response = await fetch(`${apiBaseUrl}/profesores`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      const result = await response.json();
+      if (response.ok && result.success) {
+        profesorSelect.innerHTML =
+          '<option value="">Seleccione un profesor...</option>';
+        result.data.forEach((profesor) => {
+          const option = document.createElement("option");
+          option.value = profesor.teacher_id;
+          option.textContent = profesor.name;
+          profesorSelect.appendChild(option);
+        });
+      } else {
+        showMessage(
+          result.message || "No se pudo cargar la lista de profesores.",
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Error al cargar profesores:", error);
+      showMessage(
+        "Error de red al intentar cargar la lista de profesores.",
+        "error"
+      );
+    }
+  };
+
+  const renderSchedule = (profesor) => {
+    profesorSchedules.innerHTML = "";
+    if (!profesor || Object.keys(profesor.horario_detallado).length === 0) {
+      profesorSchedules.innerHTML =
+        "<p>No se pudieron asignar materias a este profesor o no tiene horario de disponibilidad.</p>";
+      return;
+    }
+
+    const profesorTitle = document.createElement("h3");
+    profesorTitle.textContent = `Horario de ${profesor.nombre}`;
+    profesorSchedules.appendChild(profesorTitle);
+
+    const scheduleCardsContainer = document.createElement("div");
+    scheduleCardsContainer.className = "schedule-cards-container";
+    profesorSchedules.appendChild(scheduleCardsContainer);
+
+    const daysOfWeek = Object.keys(profesor.horario_detallado);
+    daysOfWeek.forEach((day) => {
+      const dayCard = document.createElement("div");
+      dayCard.className = "day-card";
+
+      const dayTitle = document.createElement("h4");
+      dayTitle.textContent = day;
+      dayCard.appendChild(dayTitle);
+
+      const table = document.createElement("table");
+      table.className = "day-schedule-table";
+      const tbody = document.createElement("tbody");
+
+      if (
+        profesor.horario_detallado[day] &&
+        profesor.horario_detallado[day].length > 0
+      ) {
+        profesor.horario_detallado[day].forEach((clase) => {
+          const row = document.createElement("tr");
+          let materiaInfo = clase.materia_nombre;
+          if (clase.semestre) {
+            materiaInfo += ` (${clase.semestre})`;
+          }
+          row.innerHTML = `
+                        <td>${clase.inicio} - ${clase.fin}</td>
+                        <td>${materiaInfo}</td>
+                    `;
+          tbody.appendChild(row);
+        });
+      } else {
+        const row = document.createElement("tr");
+        row.innerHTML = `<td>No hay clases asignadas para este día.</td>`;
+        tbody.appendChild(row);
+      }
+
+      table.appendChild(tbody);
+      dayCard.appendChild(table);
+      scheduleCardsContainer.appendChild(dayCard);
+    });
+
+    scheduleContainer.style.display = "block";
+  };
+
+  const renderUnassignedSubjects = (subjects) => {
+    unassignedSubjectsList.innerHTML = "";
+    if (subjects.length > 0) {
+      unassignedSubjectsContainer.style.display = "block";
+      subjects.forEach((subject) => {
+        const li = document.createElement("li");
+        li.textContent = `${subject.nombre} (Semestre: ${subject.semestre})`;
+        unassignedSubjectsList.appendChild(li);
+      });
+    } else {
+      unassignedSubjectsContainer.style.display = "none";
+    }
+  };
+
+  // Función genérica para manejar la generación de horarios
+  const generateSchedule = async (endpoint) => {
+    const profesorId = profesorSelect.value;
+    if (!profesorId) {
+      showMessage("Por favor, selecciona un profesor.", "info");
+      return;
+    }
+
+    showMessage("Generando horario, por favor espere...", "info");
+    scheduleContainer.style.display = "none";
+    unassignedSubjectsContainer.style.display = "none";
+
+    const authToken = localStorage.getItem("authToken");
+    if (!authToken) {
+      showMessage(
+        "Error: No se encontró el token de autenticación. Por favor, inicie sesión.",
+        "error"
+      );
+      return;
+    }
+
+    try {
+      const response = await fetch(`${apiBaseUrl}/${endpoint}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          // Agregar el token como un Bearer Token en el encabezado Authorization
           Authorization: `Bearer ${authToken}`,
         },
-        body: JSON.stringify({ is_saturday: isSaturday }),
+        body: JSON.stringify({ profesor_id: profesorId }),
       });
+
+      if (response.status === 401) {
+        showMessage(
+          "No autorizado. Su sesión ha expirado o no tiene permisos.",
+          "error"
+        );
+        return;
+      }
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        showMessage("Horario generado con éxito.", "success");
-        if (isSaturday) {
-          renderSchedule(data.data.profesores, "saturday");
-        } else {
-          renderSchedule(data.data.profesores, "weekday");
-          renderUnassignedSubjects(data.data.materias_sin_asignar);
-        }
+      if (data.success) {
+        renderSchedule(data.data.profesor);
+        renderUnassignedSubjects(data.data.materias_sin_asignar);
+        showMessage("Horario generado exitosamente.", "success");
       } else {
         showMessage(`Error: ${data.message}`, "error");
       }
     } catch (error) {
-      console.error("Error al generar horarios:", error);
+      console.error("Error al generar el horario:", error);
       showMessage(
-        "Error del servidor. Por favor, inténtalo de nuevo más tarde.",
+        "Error de red al intentar generar el horario. Por favor, inténtelo de nuevo.",
         "error"
       );
     }
-  }
+  };
 
-  /**
-   * Renderiza el horario generado en la interfaz.
-   * @param {Array} profesores - Los datos de los profesores y sus horarios.
-   * @param {string} type - El tipo de horario a renderizar ('weekday' o 'saturday').
-   */
-  function renderSchedule(profesores, type) {
-    const containerId =
-      type === "saturday"
-        ? "profesor-schedules-saturday"
-        : "profesor-schedules-weekday";
-    const scheduleContainer = document.getElementById(containerId);
-    const displayContainer =
-      type === "saturday"
-        ? saturdayScheduleContainer
-        : weekdayScheduleContainer;
+  // Event listener para el botón de Lunes a Viernes
+  generateButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    generateSchedule("profesor-horario");
+  });
 
-    displayContainer.style.display = "block";
+  // Event listener para el nuevo botón de Sábado
+  generateSaturdayButton.addEventListener("click", (e) => {
+    e.preventDefault();
+    generateSchedule("profesor-horario-sabado");
+  });
 
-    profesores.forEach((profesor) => {
-      if (Object.keys(profesor.horario_detallado).length > 0) {
-        const profesorDiv = document.createElement("div");
-        profesorDiv.className = "profesor-schedule-card";
-
-        const profesorTitle = document.createElement("h3");
-        profesorTitle.textContent = profesor.nombre;
-        profesorDiv.appendChild(profesorTitle);
-
-        const scheduleTable = createScheduleTable(profesor.horario_detallado);
-        profesorDiv.appendChild(scheduleTable);
-
-        scheduleContainer.appendChild(profesorDiv);
-      }
-    });
-  }
-
-  /**
-   * Crea una tabla de horario a partir de los datos.
-   * @param {object} horarioDetallado - El objeto con el horario por día.
-   * @returns {HTMLTableElement} La tabla HTML del horario.
-   */
-  function createScheduleTable(horarioDetallado) {
-    const table = document.createElement("table");
-    table.className = "schedule-table";
-
-    // Encabezados de la tabla
-    const thead = table.createTHead();
-    const headerRow = thead.insertRow();
-    ["Día", "Materia", "Hora de Inicio", "Hora de Fin"].forEach((text) => {
-      const th = document.createElement("th");
-      th.textContent = text;
-      headerRow.appendChild(th);
-    });
-
-    // Cuerpo de la tabla
-    const tbody = document.createElement("tbody");
-    const daysOrder = [
-      "Lunes",
-      "Martes",
-      "Miércoles",
-      "Jueves",
-      "Viernes",
-      "Sábado",
-      "Domingo",
-    ];
-
-    daysOrder.forEach((day) => {
-      if (horarioDetallado[day]) {
-        horarioDetallado[day].forEach((clase) => {
-          const row = tbody.insertRow();
-          const cell1 = row.insertCell(0);
-          const cell2 = row.insertCell(1);
-          const cell3 = row.insertCell(2);
-          const cell4 = row.insertCell(3);
-
-          cell1.textContent = day;
-          cell2.textContent = clase.materia_nombre;
-          cell3.textContent = clase.inicio;
-          cell4.textContent = clase.fin;
-        });
-      }
-    });
-
-    table.appendChild(tbody);
-    return table;
-  }
-
-  /**
-   * Renderiza las materias que no pudieron ser asignadas.
-   * @param {Array} materiasSinAsignar - Las materias que no se asignaron.
-   */
-  function renderUnassignedSubjects(materiasSinAsignar) {
-    const list = document.getElementById("unassigned-subjects-list");
-    if (materiasSinAsignar.length > 0) {
-      unassignedSubjectsContainer.style.display = "block";
-      materiasSinAsignar.forEach((materia) => {
-        const li = document.createElement("li");
-        li.textContent = `${materia.nombre} (${materia.horas_semana} horas)`;
-        list.appendChild(li);
-      });
-    }
-  }
+  fetchProfessors();
 });

@@ -4,37 +4,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generador de Horarios de Profesores</title>
+    <title>Generador de Horarios</title>
     <link rel="stylesheet" href="public/css/style.css">
 </head>
 
 <body>
     <div class="container">
-        <h1>Generar Horario de Profesores</h1>
-        <p>Haz clic en los botones para generar los horarios.</p>
-        <div class="form-group">
-            <button id="generateWeekdayButton">Generar Horario Semanal</button>
-            <button id="generateSaturdayButton">Generar Horario del Sábado</button>
+        <h1>Generador de Horarios Individual</h1>
+
+        <form id="scheduleForm">
+            <div class="form-group">
+                <label for="profesorSelect">Selecciona un Profesor:</label>
+                <select id="profesorSelect" required>
+                    <option value="">Cargando profesores...</option>
+                </select>
+            </div>
+            <button type="submit" id="generateButton">Generar Horario (Lunes - Viernes)</button>
+            <button type="button" id="generateSaturdayButton">Generar Horario (Sábado)</button>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div id="scheduleContainer" style="display: none;">
+            <h2>Horario Asignado</h2>
+            <div id="profesor-schedules"></div>
         </div>
-        <p id="message" class="message"></p>
 
-        <hr>
-
-        <div id="scheduleTableContainer">
-            <div id="unassigned-subjects-container" style="display: none;">
-                <h2>Materias Sin Asignar</h2>
-                <ul id="unassigned-subjects-list"></ul>
-            </div>
-
-            <div id="weekdayScheduleContainer" style="display: none;">
-                <h2>Horario Semanal Generado</h2>
-                <div id="profesor-schedules-weekday"></div>
-            </div>
-
-            <div id="saturdayScheduleContainer" style="display: none;">
-                <h2>Horario del Sábado Generado</h2>
-                <div id="profesor-schedules-saturday"></div>
-            </div>
+        <div id="unassigned-subjects-container" style="display: none;">
+            <h2>Materias Sin Asignar</h2>
+            <ul id="unassigned-subjects-list"></ul>
         </div>
     </div>
 

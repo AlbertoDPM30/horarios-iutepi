@@ -3,16 +3,19 @@
 class ControladorGenerarHorarios {
 
     /*=============================================
-    GENERAR HORARIO DE LA SEMANA DE PROFESORES
+    GENERAR HORARIO DE UN PROFESOR INDIVIDUAL
     =============================================*/
-    static public function ctrGenerarHorariosProfesoresSemana() {
+    static public function ctrGenerarHorarioProfesorIndividual($profesorId) {
         try {
-            // Obtener datos del modelo
-            $profesores = ModeloProfesores::mdlMostrarProfesores("teachers", null, null);
-            if (empty($profesores)) {
-                return ["status" => 404, "success" => false, "message" => "No se encontraron profesores."];
+            // Obtener el profesor por su ID
+            $profesor = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $profesorId);
+            if (empty($profesor['data'])) {
+                return ["status" => 404, "success" => false, "message" => "Profesor no encontrado."];
             }
+            // Se asume que mdlMostrarProfesores devuelve un solo resultado si se le pasa un ID
+            $profesor = $profesor['data'];
             
+            // Obtener todas las materias y habilidades
             $materias = ModeloMaterias::mdlMostrarMaterias("subjects", null, null);
             if (empty($materias)) {
                 return ["status" => 404, "success" => false, "message" => "No se encontraron materias."];
@@ -23,51 +26,44 @@ class ControladorGenerarHorarios {
                 return ["status" => 404, "success" => false, "message" => "No se encontraron habilidades."];
             }
             
-            // Mapear habilidades a un formato más usable
             $skills_list = array_column($habilidades_db, 'skill_name', 'skill_id');
 
-            // Pre-procesar datos para el algoritmo
-            $profesores_procesados = [];
-            foreach ($profesores['data'] as $profesor) {
-                $habilidades_profesor_db = ModeloHabilidades::mdlMostrarHabilidadesProfesores("teacher_skills", "teacher_id", $profesor['teacher_id']);
-                $disponibilidad_db = ModeloProfesores::mdlMostrarDisponibilidadesProfesores("teacher_availability", "teacher_id", $profesor['teacher_id']);
-                
-                $horas_totales = 0;
-                $disponibilidad_formato = [];
-                if (!empty($disponibilidad_db)) {
-                    foreach ($disponibilidad_db as $disponibilidad) {
-                        $horas_totales += (strtotime($disponibilidad['end_time']) - strtotime($disponibilidad['start_time'])) / 3600;
-                        $disponibilidad_formato[] = $disponibilidad;
-                    }
+            // Pre-procesar datos del profesor seleccionado
+            $habilidades_profesor_db = ModeloHabilidades::mdlMostrarHabilidadesProfesores("teacher_skills", "teacher_id", $profesor['teacher_id']);
+            $disponibilidad_db = ModeloProfesores::mdlMostrarDisponibilidadesProfesores("teacher_availability", "teacher_id", $profesor['teacher_id']);
+            
+            $horas_totales = 0;
+            $disponibilidad_formato = [];
+            foreach ($disponibilidad_db as $disponibilidad) {
+                if ($disponibilidad['day_of_week'] === 'Sábado') {
+                    continue;
                 }
-                
-                $habilidades_profesor_formato = [];
-                if (!empty($habilidades_profesor_db)) {
-                    foreach ($habilidades_profesor_db as $h) {
-                        $habilidades_profesor_formato[$skills_list[$h['skill_id']]] = $h['stars'];
-                    }
-                }
-
-                $profesores_procesados[$profesor['teacher_id']] = [
-                    'id' => $profesor['teacher_id'],
-                    'nombre' => $profesor['name'],
-                    'horas_disponibles_semana' => floor($horas_totales),
-                    'disponibilidad' => $disponibilidad_formato,
-                    'habilidades' => $habilidades_profesor_formato,
-                    'materias_asignadas' => [],
-                    'horario_detallado' => []
-                ];
+                $horas_totales += (strtotime($disponibilidad['end_time']) - strtotime($disponibilidad['start_time'])) / 3600;
+                $disponibilidad_formato[] = $disponibilidad;
+            }
+            
+            $habilidades_profesor_formato = [];
+            foreach ($habilidades_profesor_db as $h) {
+                $habilidades_profesor_formato[$skills_list[$h['skill_id']]] = $h['stars'];
             }
 
+            $profesor_procesado = [
+                'id' => $profesor['teacher_id'],
+                'nombre' => $profesor['name'],
+                'horas_disponibles_semana' => floor($horas_totales),
+                'disponibilidad' => $disponibilidad_formato,
+                'habilidades' => $habilidades_profesor_formato,
+                'horario_detallado' => []
+            ];
+
+            // Pre-procesar todas las materias
             $materias_procesadas = [];
             foreach ($materias as $materia) {
                 $habilidades_materia_db = ModeloHabilidades::mdlMostrarMateriasHabilidades("subject_skills", "subject_id", $materia['subject_id']);
                 
                 $habilidades_materia_formato = [];
-                if (!empty($habilidades_materia_db)) {
-                    foreach ($habilidades_materia_db as $hr) {
-                        $habilidades_materia_formato[$skills_list[$hr['skill_id']]] = $hr['min_stars'];
-                    }
+                foreach ($habilidades_materia_db as $hr) {
+                    $habilidades_materia_formato[$skills_list[$hr['skill_id']]] = $hr['min_stars'];
                 }
 
                 $materias_procesadas[$materia['subject_id']] = [
@@ -75,161 +71,204 @@ class ControladorGenerarHorarios {
                     'nombre' => $materia['name'],
                     'horas_semana' => $materia['duration_hours'],
                     'semestre' => $materia['semester'],
-                    'habilidades_requeridas' => $habilidades_materia_formato
+                    'habilidades_requeridas' => $habilidades_materia_formato,
+                    'horas_asignadas' => 0
                 ];
             }
             
-            /* ================================================================= */
-            /* ===             INICIO DE LA LÓGICA DEL ALGORITMO             === */
-            /* ================================================================= */
+            // Lógica de asignación de horario para un único profesor
+            $materias_por_asignar = $materias_procesadas;
+            $materias_sin_asignar_final = [];
+            $dias_semana_full = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+            $horas_asignadas_en_la_semana = 0;
 
-            /* Calcula la puntuación de un profesor para una materia. */
-            $calcularPuntuacion = function (array $profesor, array $materia): int {
-                $puntuacion = 0;
-                foreach ($materia['habilidades_requeridas'] as $habilidad => $minimo) {
-                    if (!isset($profesor['habilidades'][$habilidad]) || $profesor['habilidades'][$habilidad] < $minimo) {
-                        return 0; // El profesor no cumple con los requisitos mínimos
+            // Función para generar un bloque de una hora
+            $generarBloqueIndividual = function (&$profesor, $dia_preferido, $materia_id, $horas_asignadas_en_la_semana) {
+                $MINUTOS_POR_HORA = 60;
+                $RECESO_INICIO = strtotime('09:30');
+                $RECESO_FIN = strtotime('10:00');
+                
+                // Iterar sobre la disponibilidad del profesor para el día preferido
+                foreach ($profesor['disponibilidad'] as $disponibilidad) {
+                    if ($disponibilidad['day_of_week'] === $dia_preferido) {
+                        $inicioMinutosDia = strtotime($disponibilidad['start_time']) / 60;
+                        $finMinutosDia = strtotime($disponibilidad['end_time']) / 60;
+
+                        for ($minutoActual = $inicioMinutosDia; $minutoActual < $finMinutosDia; $minutoActual += $MINUTOS_POR_HORA) {
+                            $minutoFinClase = $minutoActual + $MINUTOS_POR_HORA;
+
+                            // Verificar si el bloque se solapa con el receso
+                            if ($minutoActual * 60 >= $RECESO_INICIO && $minutoActual * 60 < $RECESO_FIN) {
+                                continue;
+                            }
+
+                            // Verificar si el bloque ya está ocupado por otra clase
+                            $ranuraLibre = true;
+                            if (isset($profesor['horario_detallado'][$dia_preferido])) {
+                                foreach ($profesor['horario_detallado'][$dia_preferido] as $claseExistente) {
+                                    $inicioExistente = strtotime($claseExistente['inicio']) / 60;
+                                    $finExistente = strtotime($claseExistente['fin']) / 60;
+                                    if (($minutoActual * 60 < $finExistente * 60) && ($minutoFinClase * 60 > $inicioExistente * 60)) {
+                                        $ranuraLibre = false;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if ($ranuraLibre) {
+                                $horaInicio = date('H:i', $minutoActual * 60);
+                                $horaFin = date('H:i', $minutoFinClase * 60);
+                                return ['dia' => $dia_preferido, 'inicio' => $horaInicio, 'fin' => $horaFin];
+                            }
+                        }
                     }
                 }
-
-                $puntuacionHabilidades = 0;
-                foreach ($materia['habilidades_requeridas'] as $habilidad => $minimo) {
-                    $puntuacionHabilidades += ($profesor['habilidades'][$habilidad] - $minimo);
-                }
-                
-                // Penalización por la carga de trabajo actual del profesor
-                $horas_asignadas = array_sum(array_column($profesor['materias_asignadas'], 'horas_semana'));
-                $penalizacion = $horas_asignadas * 2;
-                $puntuacion = $puntuacionHabilidades - $penalizacion;
-
-                return max(1, (int)$puntuacion);
+                return null;
             };
 
-            /* Genera bloques de horario para una materia, sin conflictos y sin repetición en el mismo día. */
-            $generarBloquesHorarioMejorado = function (array &$profesor, array $materia) {
-                $MINUTOS_POR_HORA_ACADEMICA = 45;
-                $horasAcademicasRestantes = $materia['horas_semana'];
-                $bloquesAsignados = [];
-                $horasAcademicasPorBloque = 2; // Un bloque de 90 minutos
-                $duracionBloqueMinutos = $horasAcademicasPorBloque * $MINUTOS_POR_HORA_ACADEMICA;
+            // Ordenar materias por semestre para priorizar las más altas
+            uasort($materias_por_asignar, function($a, $b) {
+                return $b['semestre'] <=> $a['semestre'];
+            });
 
-                $dias_con_materia = [];
-                $disponibilidad_ordenada = $profesor['disponibilidad'];
-                
-                // Ordenar por el día de la semana para asegurar una distribución equitativa.
-                usort($disponibilidad_ordenada, function($a, $b) {
-                    $dias_semana = ['Lunes' => 1, 'Martes' => 2, 'Miércoles' => 3, 'Jueves' => 4, 'Viernes' => 5, 'Sábado' => 6, 'Domingo' => 7];
-                    return $dias_semana[$a['day_of_week']] <=> $dias_semana[$b['day_of_week']];
-                });
-
-                foreach ($disponibilidad_ordenada as $disponibilidad) {
-                    if ($horasAcademicasRestantes <= 0) break;
-                    
-                    $dia = $disponibilidad['day_of_week'];
-                    
-                    // Evitar asignar más de un bloque de la misma materia el mismo día.
-                    if (in_array($dia, $dias_con_materia)) {
-                        continue;
+            foreach ($materias_por_asignar as $materiaId => &$materia) {
+                // Verificar si el profesor puede dar la materia
+                $habilidades_materia = $materia['habilidades_requeridas'];
+                $puede_dar_materia = true;
+                foreach ($habilidades_materia as $habilidad => $minimo) {
+                    if (!isset($profesor_procesado['habilidades'][$habilidad]) || $profesor_procesado['habilidades'][$habilidad] < $minimo) {
+                        $puede_dar_materia = false;
+                        break;
                     }
+                }
+                if (!$puede_dar_materia) {
+                    $materias_sin_asignar_final[] = $materia;
+                    continue;
+                }
 
-                    $inicioMinutosDia = strtotime($disponibilidad['start_time']) / 60;
-                    $finMinutosDia = strtotime($disponibilidad['end_time']) / 60;
-
-                    for ($i = $inicioMinutosDia; $i + $duracionBloqueMinutos <= $finMinutosDia; $i += $MINUTOS_POR_HORA_ACADEMICA) {
-                        if ($horasAcademicasRestantes <= 0) break;
-                        
-                        $horaInicio = date('H:i', $i * 60);
-                        $horaFin = date('H:i', ($i + $duracionBloqueMinutos) * 60);
-                        
-                        $ranuraLibre = true;
-                        // Verificar si hay una clase existente en esta franja horaria.
-                        if (isset($profesor['horario_detallado'][$dia])) {
-                            foreach ($profesor['horario_detallado'][$dia] as $claseExistente) {
-                                $inicioExistente = strtotime($claseExistente['inicio']) / 60;
-                                $finExistente = strtotime($claseExistente['fin']) / 60;
-                                if (($i < $finExistente && ($i + $duracionBloqueMinutos) > $inicioExistente)) {
-                                    $ranuraLibre = false;
+                $horas_restantes = $materia['horas_semana'];
+                while ($horas_restantes > 0 && $horas_asignadas_en_la_semana < $profesor_procesado['horas_disponibles_semana']) {
+                    $dia_asignado = null;
+                    shuffle($dias_semana_full);
+                    
+                    foreach ($dias_semana_full as $dia) {
+                        // REGLA: No repetir la misma materia en el mismo día
+                        $materia_ya_asignada_en_dia = false;
+                        if (isset($profesor_procesado['horario_detallado'][$dia])) {
+                            foreach ($profesor_procesado['horario_detallado'][$dia] as $clase) {
+                                if ($clase['materia_nombre'] === $materia['nombre']) {
+                                    $materia_ya_asignada_en_dia = true;
                                     break;
                                 }
                             }
                         }
 
-                        if ($ranuraLibre) {
-                            $horas_ya_asignadas = array_sum(array_column($profesor['materias_asignadas'], 'horas_semana'));
-                            // Verificar si el profesor tiene suficientes horas disponibles.
-                            if ($horas_ya_asignadas + $horasAcademicasPorBloque > $profesor['horas_disponibles_semana']) {
-                                continue;
-                            }
-                            
-                            $bloquesAsignados[] = "$dia ({$horaInicio} - {$horaFin})";
-                            $horasAcademicasRestantes -= $horasAcademicasPorBloque;
-                            
-                            $profesor['horario_detallado'][$dia][] = [
-                                'materia_nombre' => $materia['nombre'],
-                                'inicio' => $horaInicio,
-                                'fin' => $horaFin
-                            ];
-                            $dias_con_materia[] = $dia;
+                        if (!$materia_ya_asignada_en_dia) {
+                            $dia_asignado = $dia;
                             break;
                         }
                     }
-                }
-                return $bloquesAsignados;
-            };
 
-            // Ejecución del algoritmo principal
-            $materias_a_asignar = $materias_procesadas;
-            $materias_sin_asignar_final = [];
-            $iteracion = 0;
+                    if ($dia_asignado) {
+                        $bloque = $generarBloqueIndividual($profesor_procesado, $dia_asignado, $materiaId, $horas_asignadas_en_la_semana);
+                        
+                        if ($bloque) {
+                            $profesor_procesado['horario_detallado'][$bloque['dia']][] = [
+                                'materia_nombre' => $materia['nombre'],
+                                'semestre' => $materia['semestre'],
+                                'inicio' => $bloque['inicio'],
+                                'fin' => $bloque['fin']
+                            ];
+                            $horas_restantes--;
+                            $horas_asignadas_en_la_semana++;
+                        } else {
+                            // No se encontró un bloque en el día, intentar con otro día
+                            break;
+                        }
+                    } else {
+                        // No se encontró un día disponible para esta materia, pasar a la siguiente
+                        break;
+                    }
+                }
+
+                if ($horas_restantes > 0) {
+                    $materias_sin_asignar_final[] = $materia;
+                }
+            }
             
-            while (!empty($materias_a_asignar) && $iteracion < count($materias_procesadas)) {
-                $materia_asignada_en_este_ciclo = false;
+            // Llenar los espacios libres y agregar el receso en todos los días
+            foreach ($dias_semana_full as $dia) {
+                $disponibilidad_dia = array_filter($profesor_procesado['disponibilidad'], function($d) use ($dia) {
+                    return $d['day_of_week'] === $dia;
+                });
                 
-                uasort($materias_a_asignar, function($a, $b) {
-                    return $b['semestre'] <=> $a['semestre'];
+                if (empty($disponibilidad_dia)) continue;
+
+                $inicio_disponibilidad = strtotime(array_values($disponibilidad_dia)[0]['start_time']);
+                $fin_disponibilidad = strtotime(array_values($disponibilidad_dia)[0]['end_time']);
+
+                $horarioDelDia = $profesor_procesado['horario_detallado'][$dia] ?? [];
+                
+                // Agregar el bloque de receso si no existe
+                $receso_existe = false;
+                foreach ($horarioDelDia as $clase) {
+                    if ($clase['inicio'] === '09:30' && $clase['fin'] === '10:00') {
+                        $receso_existe = true;
+                        break;
+                    }
+                }
+                if (!$receso_existe) {
+                    $horarioDelDia[] = [
+                        'materia_nombre' => 'Receso',
+                        'semestre' => '',
+                        'inicio' => '09:30',
+                        'fin' => '10:00'
+                    ];
+                }
+
+                usort($horarioDelDia, function($a, $b) {
+                    return strtotime($a['inicio']) <=> strtotime($b['inicio']);
                 });
 
-                foreach (array_keys($materias_a_asignar) as $materiaId) {
-                    $materia = $materias_a_asignar[$materiaId];
-                    $mejorPuntuacion = -1;
-                    $mejorProfesorId = null;
-                    
-                    foreach ($profesores_procesados as $profesorId => &$profesor) {
-                        $puntuacionActual = $calcularPuntuacion($profesor, $materia);
-                        if ($puntuacionActual > $mejorPuntuacion) {
-                            $mejorPuntuacion = $puntuacionActual;
-                            $mejorProfesorId = $profesorId;
-                        }
-                    }
+                $horarioFinalDelDia = [];
+                $lastTime = $inicio_disponibilidad;
 
-                    if ($mejorProfesorId && $mejorPuntuacion > 0) {
-                        $bloquesAsignados = $generarBloquesHorarioMejorado($profesores_procesados[$mejorProfesorId], $materia);
-                        
-                        if (count($bloquesAsignados) >= ceil($materia['horas_semana'] / 2)) {
-                            $profesores_procesados[$mejorProfesorId]['materias_asignadas'][$materiaId] = $materia;
-                            unset($materias_a_asignar[$materiaId]);
-                            $materia_asignada_en_este_ciclo = true;
-                        }
+                foreach ($horarioDelDia as $clase) {
+                    $claseInicio = strtotime($clase['inicio']);
+                    $claseFin = strtotime($clase['fin']);
+
+                    // Si hay un hueco, llenarlo con "Horario Libre"
+                    if ($claseInicio > $lastTime) {
+                        $horarioFinalDelDia[] = [
+                            'materia_nombre' => 'Horario Libre',
+                            'semestre' => '',
+                            'inicio' => date('H:i', $lastTime),
+                            'fin' => date('H:i', $claseInicio)
+                        ];
                     }
+                    
+                    $horarioFinalDelDia[] = $clase;
+                    $lastTime = $claseFin;
                 }
                 
-                if (!$materia_asignada_en_este_ciclo) {
-                    $materias_sin_asignar_final = $materias_a_asignar;
-                    break;
+                // Llenar el espacio al final del día
+                if ($lastTime < $fin_disponibilidad) {
+                     $horarioFinalDelDia[] = [
+                        'materia_nombre' => 'Horario Libre',
+                        'semestre' => '',
+                        'inicio' => date('H:i', $lastTime),
+                        'fin' => date('H:i', $fin_disponibilidad)
+                    ];
                 }
-                $iteracion++;
+                
+                $profesor_procesado['horario_detallado'][$dia] = $horarioFinalDelDia;
             }
-
-            /* ================================================================= */
-            /* ===              FIN DE LA LÓGICA DEL ALGORITMO               === */
-            /* ================================================================= */
-
-            // Preparar la respuesta final
+            
             $response = [
                 "status" => 200,
                 "success" => true,
                 "data" => [
-                    "profesores" => array_values($profesores_procesados),
+                    "profesor" => $profesor_procesado,
                     "materias_sin_asignar" => array_values($materias_sin_asignar_final)
                 ]
             ];
@@ -237,7 +276,253 @@ class ControladorGenerarHorarios {
             return $response;
 
         } catch (PDOException $e) {
-            error_log("Error en ctrGenerarHorariosProfesoresSemana: " . $e->getMessage());
+            error_log("Error en ctrGenerarHorarioProfesorIndividual: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error del servidor",
+                "error" => $e->getMessage()
+            ];
+        }
+    }
+
+    static public function ctrGenerarHorarioSabado($profesorId) {
+        try {
+            // Obtener el profesor por su ID
+            $profesor = ModeloProfesores::mdlMostrarProfesores("teachers", "teacher_id", $profesorId);
+            if (empty($profesor['data'])) {
+                return ["status" => 404, "success" => false, "message" => "Profesor no encontrado."];
+            }
+            $profesor = $profesor['data'];
+
+            // Obtener materias y habilidades
+            $materias = ModeloMaterias::mdlMostrarMaterias("subjects", null, null);
+            if (empty($materias)) {
+                return ["status" => 404, "success" => false, "message" => "No se encontraron materias."];
+            }
+
+            $habilidades_db = ModeloHabilidades::mdlMostrarHabilidades("skills", null, null);
+            if (empty($habilidades_db)) {
+                return ["status" => 404, "success" => false, "message" => "No se encontraron habilidades."];
+            }
+            
+            $skills_list = array_column($habilidades_db, 'skill_name', 'skill_id');
+
+            // Pre-procesar datos del profesor
+            $habilidades_profesor_db = ModeloHabilidades::mdlMostrarHabilidadesProfesores("teacher_skills", "teacher_id", $profesor['teacher_id']);
+            $disponibilidad_db = ModeloProfesores::mdlMostrarDisponibilidadesProfesores("teacher_availability", "teacher_id", $profesor['teacher_id']);
+            
+            $horas_totales_sabado = 0;
+            $disponibilidad_sabado = [];
+            foreach ($disponibilidad_db as $disponibilidad) {
+                if ($disponibilidad['day_of_week'] === 'Sábado') {
+                    $horas_totales_sabado += (strtotime($disponibilidad['end_time']) - strtotime($disponibilidad['start_time'])) / 3600;
+                    $disponibilidad_sabado[] = $disponibilidad;
+                }
+            }
+            
+            $habilidades_profesor_formato = [];
+            foreach ($habilidades_profesor_db as $h) {
+                $habilidades_profesor_formato[$skills_list[$h['skill_id']]] = $h['stars'];
+            }
+
+            $profesor_procesado = [
+                'id' => $profesor['teacher_id'],
+                'nombre' => $profesor['name'],
+                'horas_disponibles_semana' => floor($horas_totales_sabado),
+                'disponibilidad' => $disponibilidad_sabado,
+                'habilidades' => $habilidades_profesor_formato,
+                'horario_detallado' => []
+            ];
+            
+            if (empty($profesor_procesado['disponibilidad'])) {
+                return ["status" => 404, "success" => false, "message" => "El profesor no tiene disponibilidad registrada para el Sábado."];
+            }
+
+            // Pre-procesar materias
+            $materias_procesadas = [];
+            foreach ($materias as $materia) {
+                $habilidades_materia_db = ModeloHabilidades::mdlMostrarMateriasHabilidades("subject_skills", "subject_id", $materia['subject_id']);
+                
+                $habilidades_materia_formato = [];
+                foreach ($habilidades_materia_db as $hr) {
+                    $habilidades_materia_formato[$skills_list[$hr['skill_id']]] = $hr['min_stars'];
+                }
+
+                $materias_procesadas[$materia['subject_id']] = [
+                    'id' => $materia['subject_id'],
+                    'nombre' => $materia['name'],
+                    'horas_semana' => $materia['duration_hours'],
+                    'semestre' => $materia['semester'],
+                    'habilidades_requeridas' => $habilidades_materia_formato,
+                    'horas_asignadas' => 0
+                ];
+            }
+            
+            $materias_por_asignar = $materias_procesadas;
+            $materias_sin_asignar_final = [];
+            $dia_sabado = ['Sábado'];
+            $horas_asignadas_en_sabado = 0;
+
+            // Función para generar un bloque de una hora
+            $generarBloqueIndividual = function (&$profesor, $dia_preferido, $materia_id) {
+                $MINUTOS_POR_HORA = 60;
+                $RECESO_INICIO = strtotime('11:30'); // Receso para el turno de Sábado
+                $RECESO_FIN = strtotime('12:00');
+                
+                foreach ($profesor['disponibilidad'] as $disponibilidad) {
+                    if ($disponibilidad['day_of_week'] === $dia_preferido) {
+                        $inicioMinutosDia = strtotime($disponibilidad['start_time']) / 60;
+                        $finMinutosDia = strtotime($disponibilidad['end_time']) / 60;
+
+                        for ($minutoActual = $inicioMinutosDia; $minutoActual < $finMinutosDia; $minutoActual += $MINUTOS_POR_HORA) {
+                            $minutoFinClase = $minutoActual + $MINUTOS_POR_HORA;
+
+                            if ($minutoActual * 60 >= $RECESO_INICIO && $minutoActual * 60 < $RECESO_FIN) {
+                                continue;
+                            }
+
+                            $ranuraLibre = true;
+                            if (isset($profesor['horario_detallado'][$dia_preferido])) {
+                                foreach ($profesor['horario_detallado'][$dia_preferido] as $claseExistente) {
+                                    $inicioExistente = strtotime($claseExistente['inicio']) / 60;
+                                    $finExistente = strtotime($claseExistente['fin']) / 60;
+                                    if (($minutoActual * 60 < $finExistente * 60) && ($minutoFinClase * 60 > $inicioExistente * 60)) {
+                                        $ranuraLibre = false;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if ($ranuraLibre) {
+                                $horaInicio = date('H:i', $minutoActual * 60);
+                                $horaFin = date('H:i', $minutoFinClase * 60);
+                                return ['dia' => $dia_preferido, 'inicio' => $horaInicio, 'fin' => $horaFin];
+                            }
+                        }
+                    }
+                }
+                return null;
+            };
+
+            uasort($materias_por_asignar, function($a, $b) {
+                return $b['semestre'] <=> $a['semestre'];
+            });
+
+            foreach ($materias_por_asignar as $materiaId => &$materia) {
+                $habilidades_materia = $materia['habilidades_requeridas'];
+                $puede_dar_materia = true;
+                foreach ($habilidades_materia as $habilidad => $minimo) {
+                    if (!isset($profesor_procesado['habilidades'][$habilidad]) || $profesor_procesado['habilidades'][$habilidad] < $minimo) {
+                        $puede_dar_materia = false;
+                        break;
+                    }
+                }
+                if (!$puede_dar_materia) {
+                    $materias_sin_asignar_final[] = $materia;
+                    continue;
+                }
+                
+                $horas_restantes = $materia['horas_semana'];
+                while ($horas_restantes > 0 && $horas_asignadas_en_sabado < $profesor_procesado['horas_disponibles_semana']) {
+                    $bloque = $generarBloqueIndividual($profesor_procesado, 'Sábado', $materiaId);
+                    
+                    if ($bloque) {
+                        $profesor_procesado['horario_detallado']['Sábado'][] = [
+                            'materia_nombre' => $materia['nombre'],
+                            'semestre' => $materia['semestre'],
+                            'inicio' => $bloque['inicio'],
+                            'fin' => $bloque['fin']
+                        ];
+                        $horas_restantes--;
+                        $horas_asignadas_en_sabado++;
+                    } else {
+                        break;
+                    }
+                }
+
+                if ($horas_restantes > 0) {
+                    $materias_sin_asignar_final[] = $materia;
+                }
+            }
+            
+            // Llenar espacios libres y agregar el receso
+            $dia = 'Sábado';
+            $disponibilidad_dia = array_filter($profesor_procesado['disponibilidad'], function($d) use ($dia) {
+                return $d['day_of_week'] === $dia;
+            });
+            
+            if (!empty($disponibilidad_dia)) {
+                $inicio_disponibilidad = strtotime(array_values($disponibilidad_dia)[0]['start_time']);
+                $fin_disponibilidad = strtotime(array_values($disponibilidad_dia)[0]['end_time']);
+
+                $horarioDelDia = $profesor_procesado['horario_detallado'][$dia] ?? [];
+                
+                $receso_existe = false;
+                foreach ($horarioDelDia as $clase) {
+                    if ($clase['inicio'] === '11:30' && $clase['fin'] === '12:00') {
+                        $receso_existe = true;
+                        break;
+                    }
+                }
+                if (!$receso_existe) {
+                    $horarioDelDia[] = [
+                        'materia_nombre' => 'Receso',
+                        'semestre' => '',
+                        'inicio' => '11:30',
+                        'fin' => '12:00'
+                    ];
+                }
+
+                usort($horarioDelDia, function($a, $b) {
+                    return strtotime($a['inicio']) <=> strtotime($b['inicio']);
+                });
+
+                $horarioFinalDelDia = [];
+                $lastTime = $inicio_disponibilidad;
+
+                foreach ($horarioDelDia as $clase) {
+                    $claseInicio = strtotime($clase['inicio']);
+                    $claseFin = strtotime($clase['fin']);
+
+                    if ($claseInicio > $lastTime) {
+                        $horarioFinalDelDia[] = [
+                            'materia_nombre' => 'Horario Libre',
+                            'semestre' => '',
+                            'inicio' => date('H:i', $lastTime),
+                            'fin' => date('H:i', $claseInicio)
+                        ];
+                    }
+                    
+                    $horarioFinalDelDia[] = $clase;
+                    $lastTime = $claseFin;
+                }
+                
+                if ($lastTime < $fin_disponibilidad) {
+                    $horarioFinalDelDia[] = [
+                        'materia_nombre' => 'Horario Libre',
+                        'semestre' => '',
+                        'inicio' => date('H:i', $lastTime),
+                        'fin' => date('H:i', $fin_disponibilidad)
+                    ];
+                }
+                
+                $profesor_procesado['horario_detallado'][$dia] = $horarioFinalDelDia;
+            }
+            
+            $response = [
+                "status" => 200,
+                "success" => true,
+                "data" => [
+                    "profesor" => $profesor_procesado,
+                    "materias_sin_asignar" => array_values($materias_sin_asignar_final)
+                ]
+            ];
+            
+            return $response;
+
+        } catch (PDOException $e) {
+            error_log("Error en ctrGenerarHorarioSabado: " . $e->getMessage());
             return [
                 "status" => 500,
                 "success" => false,
