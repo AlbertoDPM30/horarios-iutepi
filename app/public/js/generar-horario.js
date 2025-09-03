@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
           option.textContent = teacher.name + " " + teacher.ci_code;
           teacherSelect.appendChild(option);
         });
-        teacherSelect.value = ""; // Reset para que el usuario elija
+        teacherSelect.value = "";
         teacherSelect.prepend(
           Object.assign(document.createElement("option"), {
             value: "",
@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .slice(0, 5)}</td>`;
       days.forEach((day) => {
         const slot = scheduleByDay[day].find((s) => s.start_time === time);
-        tableHtml += `<td>${slot ? slot.subject_name : ""}</td>`;
+        tableHtml += `<td>${slot ? slot.name : ""}</td>`;
       });
       tableHtml += `</tr>`;
     });

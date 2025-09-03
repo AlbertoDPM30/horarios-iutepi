@@ -60,7 +60,7 @@ class ControladorHorario {
                         // Marcar el día y la materia como ocupados
                         $diasOcupados[$dayOfWeek][] = date('H:i:s', $time);
                         $subjectsUsedThisDay[$dayOfWeek][] = $subjectId;
-                        unset($materiasAsignadas[$key]); // Eliminar la materia para no volver a usarla en esta iteración
+                        // unset($materiasAsignadas[$key]); // Eliminar la materia para no volver a usarla en esta iteración
                         break;
                     }
                 }
