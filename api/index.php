@@ -10,6 +10,7 @@ require_once "controladores/habilidades.controlador.php"; // controlador de habi
 require_once "controladores/materias.controlador.php"; // controlador de materias
 require_once "controladores/horarios.controlador.php"; // controlador de horarios
 require_once "controladores/asignacionProfesores.controlador.php"; // controlador de asignar materias a profesores
+require_once "controladores/modulos.controlador.php"; // controlador de modulos
 require_once "controladores/router.controlador.php"; // controlador del enrutador
 
 /*=============================================
@@ -22,6 +23,7 @@ require_once "modelos/profesores.modelo.php"; // controlador de profesores
 require_once "modelos/habilidades.modelo.php"; // controlador de habilidades
 require_once "modelos/materias.modelo.php"; // controlador de materias
 require_once "modelos/horarios.modelo.php"; // controlador de horarios
+require_once "modelos/modulos.modelo.php"; // controlador de modulos
 
 
 $router = new ControladorRouter();
