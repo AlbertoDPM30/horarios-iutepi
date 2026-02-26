@@ -14,7 +14,7 @@ class ModeloMaterias {
             $stmt->execute();
             return $stmt->fetch(PDO::FETCH_ASSOC); // Obtener un solo registro
         } else {
-            $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla");
+            $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla ORDER BY name ASC");
             $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC); // Obtener todos los registros
         }
@@ -72,6 +72,10 @@ class ModeloMaterias {
             if (isset($datos['semester'])) {
                 $setClauses[] = "semester = :semester";
                 $bindParams[":semester"] = $datos['semester'];
+            }
+            if (isset($datos['is_assigned'])) {
+                $setClauses[] = "is_assigned = :is_assigned";
+                $bindParams[":is_assigned"] = $datos['is_assigned'];
             }
 
             // Establecer la zona horaria y obtener la fecha actual para updated_at

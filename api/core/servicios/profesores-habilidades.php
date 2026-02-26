@@ -8,7 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 switch ($_SERVER['REQUEST_METHOD']) {
     case 'GET':
         /*=============================================
-        OBTENER HABILIDADES DEL PROFESOR
+        OBTENER HABILIDADES DEL PROFESOR (GET)
         =============================================*/
 
         $itemTeacher = null;
@@ -29,32 +29,14 @@ switch ($_SERVER['REQUEST_METHOD']) {
         }
 
         $respuesta = ControladorHabilidades::ctrMostrarHabilidadesProfesores($itemTeacher, $itemSkill, $valorTeacher, $valorSkill);
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
-        // Enviamos los datos completos al cliente
-        foreach ($respuesta['data'] AS $key => $data) {
-            
-            $respuestaProfesor = ControladorProfesores::ctrMostrarProfesores("teacher_id", $data['teacher_id']);
-            $respuestaHabilidad = ControladorHabilidades::ctrMostrarHabilidades("skill_id", $data['skill_id']);
-
-            echo json_encode([
-                "status" => $respuesta["status"],
-                "success" => $respuesta["success"],
-                "data" => [
-                    "teacher_skill_id" => $data['teacher_skill_id'],
-                    "teacher_id" => $data['teacher_id'],
-                    "profesor" => $respuestaProfesor['data']["name"],
-                    "skill_id" => $data['skill_id'],
-                    "habilidad" => $respuestaHabilidad['data']["skill_name"],
-                    "stars" => $data['stars']
-                ]
-            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        }
 
         break;
 
     case 'POST':
         /*=============================================
-        REGISTRAR NUEVA HABILIDAD AL PROFESOR
+        REGISTRAR NUEVA HABILIDAD AL PROFESOR (POST)
         =============================================*/
         $datos = json_decode(file_get_contents('php://input'), true);
 
@@ -90,7 +72,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'PUT':
         /*=============================================
-        EDITAR HABILIDAD DEL PROFESOR
+        EDITAR HABILIDAD DEL PROFESOR (PUT)
         =============================================*/
         $datos = json_decode(file_get_contents('php://input'), true);
 
@@ -112,7 +94,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
 
     case 'DELETE':
         /*=============================================
-        ELIMINAR PROFESOR
+        ELIMINAR HABILIDAD DEL PROFESOR (DELETE)
         =============================================*/
         if (!isset($_GET['teacher_skill_id'])) {
             
@@ -120,7 +102,7 @@ switch ($_SERVER['REQUEST_METHOD']) {
             echo json_encode([
                 "status" => 400,
                 "success" => false,
-                "message" => "El 'id' del profesor y el 'id' de la habilidad es obligatorio para eliminar."
+                "message" => "El 'id' del profesor es obligatorio para eliminar."
             ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
             break;
         }

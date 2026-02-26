@@ -71,10 +71,37 @@ if (isset($ruta)) {
             include "rutas/estudiantes.php";
             break;
 
+        case "modulos":
+            AuthMiddleware::handle();
+            include "rutas/modulos.php";
+            break;
+
         // SERVICIOS
         case "profesores-habilidades":
             AuthMiddleware::handle();
             include "servicios/profesores-habilidades.php"; 
+            break;
+
+        case "profesores-disponibilidad":
+            AuthMiddleware::handle();
+            include "servicios/profesores-disponibilidad.php"; 
+            break;
+
+        case "materias-habilidades":
+            AuthMiddleware::handle();
+            include "servicios/materias-habilidades.php"; 
+            break;
+
+        case "materias-asignadas":
+        case "generar-horario":
+        case "confirmar-horario":
+            AuthMiddleware::handle();
+            include "servicios/profesores-horarios.php"; 
+            break;
+
+        case "profesores-materias":
+            AuthMiddleware::handle();
+            include "servicios/profesores-materias.php"; 
             break;
 
         // Validar estado de la API
@@ -92,9 +119,9 @@ if (isset($ruta)) {
             break;
     }
 } else {
-    http_response_code(400);
+    http_response_code(404);
     echo json_encode([
-        "status" => "400",
+        "status" => "404",
         "success" => false,
         "message" => "Ruta no especificada."
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);

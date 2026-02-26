@@ -66,6 +66,7 @@ class ControladorUsuarios {
                 
                 $token = Autenticacion::generarToken($usuario['user_id']); // generamos un nuevo token.
 
+                // Validar si el usuario se encuentra activo o inactivo
                 if ($usuario['status'] != 1) {
                     return [
                         "status" => 401,
