@@ -58,8 +58,21 @@ switch ($resource) {
         if ($requestMethod === 'POST') {
             $data = json_decode(file_get_contents('php://input'), true);
             $horario = isset($data['horario']) ? $data['horario'] : [];
-            $response = ControladorHorario::ctrConfirmarHorario($horario);
-            echo json_encode($response);
+            $teacherId = isset($data['teacher_id']) ? $data['teacher_id'] : null;
+            $response = ControladorHorario::ctrConfirmarHorario($horario, $teacherId);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        }
+        break;
+
+    case 'horarios':
+        if ($requestMethod === 'GET') {
+            $teacherId = isset($_GET['teacher_id']) ? $_GET['teacher_id'] : null;
+            $response = ControladorHorario::ctrMostrarHorarios($teacherId);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        } elseif ($requestMethod === 'DELETE') {
+            $scheduleId = isset($_GET['schedule_id']) ? $_GET['schedule_id'] : null;
+            $response = ControladorHorario::ctrEliminarHorario($scheduleId);
+            echo json_encode($response, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         }
         break;
 

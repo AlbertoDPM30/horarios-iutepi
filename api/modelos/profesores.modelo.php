@@ -331,7 +331,8 @@ class ModeloProfesores {
                                                             pm.teacher_id,
                                                             pm.subject_id,
                                                             p.name as teacher_name,
-                                                            m.name as subject_name
+                                                            m.name as subject_name,
+                                                            m.duration_hours as duration_hours
                                                         FROM $tabla as pm 
                                                         LEFT JOIN subjects as m
                                                         ON m.subject_id = pm.subject_id
@@ -349,13 +350,15 @@ class ModeloProfesores {
                                                                 pm.teacher_id,
                                                                 pm.subject_id,
                                                                 p.name as teacher_name,
-                                                                m.name as subject_name
+                                                                m.name as subject_name,
+                                                                m.duration_hours as duration_hours,
+                                                                m.semester as semester
                                                             FROM $tabla as pm 
                                                             LEFT JOIN subjects as m
                                                             ON m.subject_id = pm.subject_id
                                                             LEFT JOIN teachers as p
                                                             ON p.teacher_id = pm.teacher_id
-                                                            WHERE pm.$item = :valor ORDER BY pm.assignment_id DESC");
+                                                            WHERE pm.$item = :valor ORDER BY m.semester ASC, pm.assignment_id DESC");
 
                     $stmt->bindParam(":valor", $valor, PDO::PARAM_STR);
 
