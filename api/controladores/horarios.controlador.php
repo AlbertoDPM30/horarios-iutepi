@@ -1,12 +1,102 @@
 <?php
 
+require_once "modelos/conexion.php";
+
 class ControladorHorario {
+
+    /*=============================================
+    MOSTRAR HORARIOS GUARDADOS DE UN PROFESOR
+    =============================================*/
+    public static function ctrMostrarHorarios($teacherId = null) {
+        if ($teacherId === null) {
+            return [
+                "status" => 400,
+                "success" => false,
+                "message" => "El teacher_id es requerido."
+            ];
+        }
+
+        require_once "modelos/profesores.modelo.php";
+        
+        $materiasAsignadas = ModeloProfesores::mdlMostrarMateriasProfesores("teacher_subject_assignments", "teacher_id", $teacherId);
+        
+        if (empty($materiasAsignadas)) {
+            return [
+                "status" => 200,
+                "success" => true,
+                "message" => "No hay materias asignadas a este profesor.",
+                "data" => []
+            ];
+        }
+
+        $assignmentIds = array_column($materiasAsignadas, 'assignment_id');
+        
+        if (empty($assignmentIds)) {
+            return [
+                "status" => 200,
+                "success" => true,
+                "message" => "No hay asignaciones.",
+                "data" => []
+            ];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($assignmentIds), '?'));
+        
+        try {
+            $stmt = Conexion::conectar()->prepare("SELECT * FROM teacher_schedule WHERE teacher_subject_assignment_id IN ($placeholders) ORDER BY day_of_week, start_time");
+            $stmt->execute($assignmentIds);
+            $horarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            return [
+                "status" => 200,
+                "success" => true,
+                "message" => "Horarios obtenidos correctamente.",
+                "data" => $horarios
+            ];
+        } catch (PDOException $e) {
+            error_log("Error en ctrMostrarHorarios: " . $e->getMessage());
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error al obtener los horarios."
+            ];
+        }
+    }
+
+    /*=============================================
+    ELIMINAR UN HORARIO
+    =============================================*/
+    public static function ctrEliminarHorario($scheduleId = null) {
+        if ($scheduleId === null) {
+            return [
+                "status" => 400,
+                "success" => false,
+                "message" => "El schedule_id es requerido."
+            ];
+        }
+
+        $resultado = ModeloHorario::mdlEliminarHorario("teacher_schedule", $scheduleId);
+        
+        if ($resultado === "ok") {
+            return [
+                "status" => 200,
+                "success" => true,
+                "message" => "Horario eliminado correctamente."
+            ];
+        } else {
+            return [
+                "status" => 500,
+                "success" => false,
+                "message" => "Error al eliminar el horario."
+            ];
+        }
+    }
 
     /*=============================================
     MOSTRAR MATERIAS ASIGNADAS A UN PROFESOR
     =============================================*/
     public static function ctrMostrarMateriasAsignadas($profesorId) {
-        $materiasAsignadas = ModeloProfesores::mdlMostrarMateriasProfesores("teacher_subject_assignments", "teacher_id", $profesorId);
+        $materiasAsignadas =ModeloProfesores::mdlMostrarMateriasProfesores("teacher_subject_assignments", "teacher_id", $profesorId);
 
         return [
             "status" => 200,
@@ -78,7 +168,7 @@ class ControladorHorario {
     /*=============================================
     CONFIRMAR Y GUARDAR HORARIO FINAL
     =============================================*/
-    public static function ctrConfirmarHorario($horario) {
+    public static function ctrConfirmarHorario($horario, $teacherId = null) {
         if (empty($horario)) {
             return [
                 "status" => 400,
@@ -87,17 +177,43 @@ class ControladorHorario {
             ];
         }
 
+        if ($teacherId !== null) {
+            ModeloHorario::mdlEliminarHorariosProfesor("teacher_schedule", $teacherId);
+        }
+
         $exito = true;
+        $errores = [];
+        
         foreach ($horario as $slot) {
+            $assignmentId = $slot['assignment_id'] ?? $slot['teacher_subject_assignment_id'] ?? null;
+            
+            if ($assignmentId === null) {
+                $exito = false;
+                $errores[] = "Falta assignment_id";
+                continue;
+            }
+            
+            $dayOfWeek = $slot['day_of_week'];
+            $startTime = $slot['start_time'];
+            $endTime = $slot['end_time'];
+            
+            if ($dayOfWeek === "Sábado") {
+                list($h, $m) = sscanf($startTime, "%d:%d");
+                $horaInt = intval($h);
+                $endHour = $horaInt + 1;
+                $endTime = sprintf("%02d%s", $endHour, substr($startTime, 2));
+            }
+            
             $datos = [
-                'teacher_subject_assignment_id' => $slot['teacher_subject_assignment_id'],
-                'day_of_week' => $slot['day_of_week'],
-                'start_time' => $slot['start_time'],
-                'end_time' => $slot['end_time']
+                'teacher_subject_assignment_id' => $assignmentId,
+                'day_of_week' => $dayOfWeek,
+                'start_time' => $startTime,
+                'end_time' => $endTime
             ];
             $resultado = ModeloHorario::mdlCrearHorario("teacher_schedule", $datos);
             if ($resultado !== "ok") {
                 $exito = false;
+                $errores[] = "Error al guardar: $assignmentId";
             }
         }
 
@@ -111,7 +227,8 @@ class ControladorHorario {
             return [
                 "status" => 500,
                 "success" => false,
-                "message" => "Hubo un error al guardar el horario."
+                "message" => "Hubo un error al guardar el horario.",
+                "errors" => $errores
             ];
         }
     }

@@ -13,6 +13,7 @@ if ($requestMethod == 'OPTIONS') {
 
 switch ($resource) {
     case 'profesores':
+        require_once "modelos/profesores.modelo.php";
         $profesores = ModeloProfesores::mdlMostrarProfesores("teachers", null, null);
         echo json_encode(["status" => 200, "success" => true, "data" => $profesores]);
         break;
@@ -21,7 +22,21 @@ switch ($resource) {
         $response = [];
         if ($requestMethod === "GET") {
             $profesorId = isset($_GET['teacher_id']) ? $_GET['teacher_id'] : null;
-            $response = ControladorAsignacion::ctrMostrarMateriasElegibles($profesorId);
+            
+            if (!$profesorId) {
+                echo json_encode(["status" => 400, "success" => false, "message" => "teacher_id requerido"]);
+                break;
+            }
+            
+            include_once "modelos/profesores.modelo.php";
+            $materias = ModeloProfesores::mdlMostrarMateriasProfesores("teacher_subject_assignments", "teacher_id", $profesorId);
+            
+            $response = [
+                "status" => 200,
+                "success" => true,
+                "message" => "Materias asignadas al profesor.",
+                "data" => $materias
+            ];
 
         } elseif ($requestMethod === "POST") {
             $data = json_decode(file_get_contents("php://input"), true);
