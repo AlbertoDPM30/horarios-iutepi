@@ -28,15 +28,7 @@ switch ($resource) {
                 break;
             }
             
-            include_once "modelos/profesores.modelo.php";
-            $materias = ModeloProfesores::mdlMostrarMateriasProfesores("teacher_subject_assignments", "teacher_id", $profesorId);
-            
-            $response = [
-                "status" => 200,
-                "success" => true,
-                "message" => "Materias asignadas al profesor.",
-                "data" => $materias
-            ];
+            $response = ControladorAsignacion::ctrMostrarMateriasElegibles($profesorId);
 
         } elseif ($requestMethod === "POST") {
             $data = json_decode(file_get_contents("php://input"), true);
