@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Disponibilidad de Profesores</title>
+    <link rel="stylesheet" href="public/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Gestión de Disponibilidad de Profesores</h1>
+
+        <form id="availabilityForm">
+            <div class="form-group">
+                <label for="profesorSelect">Selecciona un profesor:</label>
+                <select id="profesorSelect" required></select>
+            </div>
+
+            <div class="week-availability-container">
+                <div class="day-container">
+                    <button type="button" class="day-btn" data-day="Lunes">Lunes</button>
+                    <div class="time-inputs-container">
+                        <label>Hora de inicio:</label>
+                        <input type="time" class="start-time-input">
+                        <label>Hora de fin:</label>
+                        <input type="time" class="end-time-input">
+                    </div>
+                </div>
+
+                <div class="day-container">
+                    <button type="button" class="day-btn" data-day="Martes">Martes</button>
+                    <div class="time-inputs-container">
+                        <label>Hora de inicio:</label>
+                        <input type="time" class="start-time-input">
+                        <label>Hora de fin:</label>
+                        <input type="time" class="end-time-input">
+                    </div>
+                </div>
+
+                <div class="day-container">
+                    <button type="button" class="day-btn" data-day="Miércoles">Miércoles</button>
+                    <div class="time-inputs-container">
+                        <label>Hora de inicio:</label>
+                        <input type="time" class="start-time-input">
+                        <label>Hora de fin:</label>
+                        <input type="time" class="end-time-input">
+                    </div>
+                </div>
+
+                <div class="day-container">
+                    <button type="button" class="day-btn" data-day="Jueves">Jueves</button>
+                    <div class="time-inputs-container">
+                        <label>Hora de inicio:</label>
+                        <input type="time" class="start-time-input">
+                        <label>Hora de fin:</label>
+                        <input type="time" class="end-time-input">
+                    </div>
+                </div>
+
+                <div class="day-container">
+                    <button type="button" class="day-btn" data-day="Viernes">Viernes</button>
+                    <div class="time-inputs-container">
+                        <label>Hora de inicio:</label>
+                        <input type="time" class="start-time-input">
+                        <label>Hora de fin:</label>
+                        <input type="time" class="end-time-input">
+                    </div>
+                </div>
+
+                <div class="day-container">
+                    <button type="button" class="day-btn" data-day="Sábado">Sábado</button>
+                    <div class="time-inputs-container">
+                        <label>Hora de inicio:</label>
+                        <input type="time" class="start-time-input">
+                        <label>Hora de fin:</label>
+                        <input type="time" class="end-time-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="button-group">
+                <button type="submit" id="submitButton">Asignar Disponibilidad</button>
+                <button type="button" id="resetButton" class="secondary-btn">Reiniciar</button>
+            </div>
+        </form>
+        <p id="message" class="message"></p>
+
+        <hr>
+
+        <h2>Disponibilidad Existente</h2>
+        <div id="availabilityTableContainer">
+            <table id="availabilityTable">
+                <thead>
+                    <tr>
+                        <th>Profesor</th>
+                        <th>Día</th>
+                        <th>Hora de Inicio</th>
+                        <th>Hora de Fin</th>
+                        <th>Acciones</th>
+                    </tr>
+                    <tr>
+                        <th><input type="text" id="filterProfesor" placeholder="Filtrar por profesor"></th>
+                        <th><input type="text" id="filterDay" placeholder="Filtrar por día"></th>
+                        <th><input type="text" id="filterStart" placeholder="Filtrar por inicio"></th>
+                        <th><input type="text" id="filterEnd" placeholder="Filtrar por fin"></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="public/js/disponibilidad.js"></script>
+</body>
+
+</html>

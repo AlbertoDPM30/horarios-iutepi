@@ -216,4 +216,122 @@ class ModeloHabilidades {
             }
         }
     }
+
+    /*====================== MATERIAS =======================*/
+
+    /*=============================================
+    MOSTRAR HABILIDADES DE LA MATERIA (GET)
+    =============================================*/
+    static public function mdlMostrarMateriasHabilidades($tabla, $item = null, $valor = null) {
+        try {
+            if ($item != null && $item != "subject_id") {
+                
+                // Obtener una habilidad específica
+                $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :valor");
+                $stmt->bindParam(":valor", $valor, PDO::PARAM_STR);
+
+            } elseif ($item == "subject_id") {
+                
+                // Obtener todas las habilidades de una materia
+                $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :valor ORDER BY min_stars DESC");
+                $stmt->bindParam(":valor", $valor, PDO::PARAM_STR);
+
+            } else {
+                // Obtener todas las habilidades
+                $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla ORDER BY subject_skill_id DESC");
+            }
+            
+            $stmt->execute();
+            
+            return ($item != null && $item != "subject_id") ? $stmt->fetch(PDO::FETCH_ASSOC) : $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+        } catch (PDOException $e) {
+            error_log("Error en mdlMostrarMateriasHabilidades: " . $e->getMessage());
+            return false;
+
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
+
+    /*=============================================
+    ASIGNAR HABILIDAD A UNA MATERIA (POST)
+    =============================================*/
+    static public function mdlCrearMateriasHabilidad($tabla, $datos) {
+        try {
+            $stmt = Conexion::conectar()->prepare("INSERT INTO  $tabla 
+                                                                (subject_id,
+                                                                skill_id,
+                                                                min_stars)
+                                                        VALUES  (:subject_id,
+                                                                :skill_id,
+                                                                :min_stars)");
+
+            $stmt->bindParam(":subject_id", $datos["subject_id"], PDO::PARAM_INT);
+            $stmt->bindParam(":skill_id", $datos["skill_id"], PDO::PARAM_INT);
+            $stmt->bindParam(":min_stars", $datos["min_stars"], PDO::PARAM_INT);
+            
+            return ($stmt->execute()) ? "ok" : "error";
+            
+        } catch (PDOException $e) {
+            error_log("Error en mdlCrearMateriasHabilidad: " . $e->getMessage());
+            // return "error";
+            return $e->getMessage();
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
+
+    /*=============================================
+    EDITAR HABILIDAD DE LA MATERIA (PUT)
+    =============================================*/
+    static public function mdlEditarMateriasHabilidad($tabla, $datos) {
+        try {
+            $stmt = Conexion::conectar()->prepare("UPDATE $tabla SET 
+                                                                subject_skill_id    = :subject_skill_id,
+                                                                subject_id          = :subject_id,
+                                                                skill_id            = :skill_id,
+                                                                min_stars           = :min_stars
+                                                        WHERE   subject_skill_id    = :subject_skill_id");
+            
+            $stmt->bindParam(":subject_skill_id", $datos["subject_skill_id"], PDO::PARAM_INT);
+            $stmt->bindParam(":subject_id", $datos["subject_id"], PDO::PARAM_INT);
+            $stmt->bindParam(":skill_id", $datos["skill_id"], PDO::PARAM_INT);
+            $stmt->bindParam(":min_stars", $datos["min_stars"], PDO::PARAM_INT);
+            
+            return ($stmt->execute()) ? "ok" : "error";
+            
+        } catch (PDOException $e) {
+            error_log("Error en mdlEditarMateriasHabilidad: " . $e->getMessage());
+            return "error";
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
+
+    /*=============================================
+    ELIMINAR HABILIDAD DE LA MATERIA (DELETE)
+    =============================================*/
+    static public function mdlEliminarMateriasHabilidad($tabla, $subject_skill_id) {
+        try {
+            $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE subject_skill_id = :subject_skill_id");
+            $stmt->bindParam(":subject_skill_id", $subject_skill_id, PDO::PARAM_INT);
+            
+            return ($stmt->execute()) ? "ok" : "error";
+            
+        } catch (PDOException $e) {
+            error_log("Error en mdlEliminarMateriasHabilidad: " . $e->getMessage());
+            return "error";
+        } finally {
+            if ($stmt) {
+                $stmt = null;
+            }
+        }
+    }
 }

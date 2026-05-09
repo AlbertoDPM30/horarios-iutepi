@@ -2,12 +2,12 @@
 
 require_once "conexion.php"; 
 
-class ModeloEstudiantes {
+class ModeloModulos {
 
     /*=============================================
-    MOSTRAR ESTUDIANTE(S)
+    MOSTRAR MODULO(S)
     =============================================*/
-    static public function mdlMostrarEstudiantes($tabla, $item, $valor) {
+    static public function mdlMostrarModulos($tabla, $item, $valor) {
         if ($item != null) {
             $stmt = Conexion::conectar()->prepare("SELECT * FROM $tabla WHERE $item = :$item");
             $stmt->bindParam(":" . $item, $valor, PDO::PARAM_STR);
@@ -22,26 +22,27 @@ class ModeloEstudiantes {
     }
 
     /*=============================================
-    CREAR ESTUDIANTE
+    CREAR MODULO
     =============================================*/
-    static public function mdlCrearEstudiante($tabla, $datos) {
+    static public function mdlCrearModulo($tabla, $datos) {
         try {
             $stmt = Conexion::conectar()->prepare(
-                "INSERT INTO $tabla (name, ci_code) 
-                VALUES (:name, :ci_code)"
+                "INSERT INTO $tabla (name, description, route) 
+                VALUES (:name, :description, :route)"
             );
 
             $stmt->bindParam(":name", $datos["name"], PDO::PARAM_STR);
-            $stmt->bindParam(":ci_code", $datos["ci_code"], PDO::PARAM_STR);
+            $stmt->bindParam(":description", $datos["description"], PDO::PARAM_STR);
+            $stmt->bindParam(":route", $datos["route"], PDO::PARAM_STR);
 
             if ($stmt->execute()) {
                 return "ok";
             } else {
-                error_log("Error al crear Estudiante en BD: " . implode(" - ", $stmt->errorInfo()));
+                error_log("Error al crear Modulo en BD: " . implode(" - ", $stmt->errorInfo()));
                 return "error";
             }
         } catch (PDOException $e) {
-            error_log("Excepción en mdlCrearEstudiante: " . $e->getMessage());
+            error_log("Excepción en mdlCrearModulo: " . $e->getMessage());
             return "error";
         } finally {
             $stmt = null;
@@ -49,11 +50,11 @@ class ModeloEstudiantes {
     }
 
     /*=============================================
-    EDITAR ESTUDIANTE
+    EDITAR MODULO
     =============================================*/
-    static public function mdlEditarEstudiante($tabla, $datos) {
+    static public function mdlEditarModulo($tabla, $datos) {
         try {
-            if (!isset($datos['student_id'])) {
+            if (!isset($datos['module_id'])) {
                 return "error_no_id";
             }
 
@@ -64,9 +65,13 @@ class ModeloEstudiantes {
                 $setClauses[] = "name = :name";
                 $bindParams[":name"] = $datos['name'];
             }
-            if (isset($datos['ci_code'])) {
-                $setClauses[] = "ci_code = :ci_code";
-                $bindParams[":ci_code"] = $datos['ci_code'];
+            if (isset($datos['description'])) {
+                $setClauses[] = "description = :description";
+                $bindParams[":description"] = $datos['description'];
+            }
+            if (isset($datos['route'])) {
+                $setClauses[] = "route = :route";
+                $bindParams[":route"] = $datos['route'];
             }
 
             date_default_timezone_set('America/Caracas');
@@ -78,7 +83,7 @@ class ModeloEstudiantes {
                 return "no_data_to_update";
             }
 
-            $sql = "UPDATE $tabla SET " . implode(", ", $setClauses) . " WHERE student_id = :student_id";
+            $sql = "UPDATE $tabla SET " . implode(", ", $setClauses) . " WHERE module_id = :module_id";
             $stmt = Conexion::conectar()->prepare($sql);
 
             foreach ($bindParams as $param => $value) {
@@ -93,7 +98,7 @@ class ModeloEstudiantes {
                 $stmt->bindValue($param, $value, $paramType);
             }
             
-            $stmt->bindValue(":student_id", $datos['student_id'], PDO::PARAM_INT);
+            $stmt->bindValue(":module_id", $datos['module_id'], PDO::PARAM_INT);
 
             if ($stmt->execute()) {
                 if ($stmt->rowCount() > 0) {
@@ -102,11 +107,11 @@ class ModeloEstudiantes {
                     return "no_changes";
                 }
             } else {
-                error_log("Error al editar Estudiante en BD: " . implode(" - ", $stmt->errorInfo()));
+                error_log("Error al editar Module en BD: " . implode(" - ", $stmt->errorInfo()));
                 return "error";
             }
         } catch (PDOException $e) {
-            error_log("Excepción en mdlEditarEstudiante: " . $e->getMessage());
+            error_log("Excepción en mdlEditarModule: " . $e->getMessage());
             return "error";
         } finally {
             $stmt = null;
@@ -114,12 +119,12 @@ class ModeloEstudiantes {
     }
 
     /*=============================================
-    ELIMINAR ESTUDIANTE
+    ELIMINAR MODULO
     =============================================*/
-    static public function mdlEliminarEstudiante($tabla, $id_Estudiante) {
+    static public function mdlEliminarModulo($tabla, $id_module) {
         try {
-            $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE student_id = :student_id");
-            $stmt->bindParam(":student_id", $id_Estudiante, PDO::PARAM_INT);
+            $stmt = Conexion::conectar()->prepare("DELETE FROM $tabla WHERE module_id = :module_id");
+            $stmt->bindParam(":module_id", $id_module, PDO::PARAM_INT);
 
             if ($stmt->execute()) {
                 if ($stmt->rowCount() > 0) {
@@ -129,11 +134,11 @@ class ModeloEstudiantes {
                     return "no_found"; 
                 }
             } else {
-                error_log("Error al eliminar Estudiante en BD: " . implode(" - ", $stmt->errorInfo()));
+                error_log("Error al eliminar Module en BD: " . implode(" - ", $stmt->errorInfo()));
                 return "error";
             }
         } catch (PDOException $e) {
-            error_log("Excepción en mdlEliminarEstudiante: " . $e->getMessage());
+            error_log("Excepción en mdlEliminarModule: " . $e->getMessage());
             return "error";
         } finally {
             $stmt = null;

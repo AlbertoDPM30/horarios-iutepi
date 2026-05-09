@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generador de Horarios</title>
+    <link rel="stylesheet" href="public/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Generador de Horarios Individual</h1>
+
+        <form id="scheduleForm">
+            <div class="form-group">
+                <label for="profesorSelect">Selecciona un Profesor:</label>
+                <select id="profesorSelect" required>
+                    <option value="">Cargando profesores...</option>
+                </select>
+            </div>
+            <button type="submit" id="generateButton">Generar Horario (Lunes - Viernes)</button>
+            <button type="button" id="generateSaturdayButton">Generar Horario (Sábado)</button>
+        </form>
+
+        <div id="message" class="message"></div>
+
+        <div id="scheduleContainer" style="display: none;">
+            <h2>Horario Asignado</h2>
+            <div id="profesor-schedules"></div>
+        </div>
+
+        <div id="unassigned-subjects-container" style="display: none;">
+            <h2>Materias Sin Asignar</h2>
+            <ul id="unassigned-subjects-list"></ul>
+        </div>
+    </div>
+
+    <script src="public/js/asignar-materias.js"></script>
+</body>
+
+</html>

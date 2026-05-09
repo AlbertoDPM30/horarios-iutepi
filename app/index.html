@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asignar Habilidades a Profesor</title>
+    <link rel="stylesheet" href="public/css/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1>Asignar Habilidad a Profesor</h1>
+        <form id="assignmentForm">
+            <div class="form-group">
+                <label for="profesorSelect">Selecciona un profesor:</label>
+                <select id="profesorSelect" required></select>
+            </div>
+            <div class="form-group">
+                <label for="habilidadSelect">Selecciona una habilidad:</label>
+                <select id="habilidadSelect" required></select>
+            </div>
+            <div class="form-group">
+                <label for="starsInput">Calificación (Estrellas):</label>
+                <input type="number" id="starsInput" min="1" max="5" placeholder="Opcional (1-5)">
+            </div>
+            <button type="submit">Asignar Habilidad</button>
+        </form>
+        <p id="message" class="message"></p>
+
+        <hr>
+
+        <h2>Asignaciones Existentes</h2>
+        <div id="assignmentsTableContainer">
+            <table id="assignmentsTable">
+                <thead>
+                    <tr>
+                        <th>Profesor</th>
+                        <th>Habilidad</th>
+                        <th>Estrellas</th>
+                    </tr>
+                    <tr>
+                        <th><input type="text" id="filterProfesor" placeholder="Filtrar por profesor"></th>
+                        <th><input type="text" id="filterHabilidad" placeholder="Filtrar por habilidad"></th>
+                        <th><input type="text" id="filterEstrellas" placeholder="Filtrar por estrellas"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="public/js/app.js"></script>
+</body>
+
+</html>
