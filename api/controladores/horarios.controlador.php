@@ -16,51 +16,16 @@ class ControladorHorario {
             ];
         }
 
-        require_once "modelos/profesores.modelo.php";
+        require_once "modelos/horarios.modelo.php";
         
-        $materiasAsignadas = ModeloProfesores::mdlMostrarMateriasProfesores("teacher_subject_assignments", "teacher_id", $teacherId);
+        $horarios = ModeloHorario::mdlMostrarHorariosConMaterias($teacherId);
         
-        if (empty($materiasAsignadas)) {
-            return [
-                "status" => 200,
-                "success" => true,
-                "message" => "No hay materias asignadas a este profesor.",
-                "data" => []
-            ];
-        }
-
-        $assignmentIds = array_column($materiasAsignadas, 'assignment_id');
-        
-        if (empty($assignmentIds)) {
-            return [
-                "status" => 200,
-                "success" => true,
-                "message" => "No hay asignaciones.",
-                "data" => []
-            ];
-        }
-
-        $placeholders = implode(',', array_fill(0, count($assignmentIds), '?'));
-        
-        try {
-            $stmt = Conexion::conectar()->prepare("SELECT * FROM teacher_schedule WHERE teacher_subject_assignment_id IN ($placeholders) ORDER BY day_of_week, start_time");
-            $stmt->execute($assignmentIds);
-            $horarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
-            
-            return [
-                "status" => 200,
-                "success" => true,
-                "message" => "Horarios obtenidos correctamente.",
-                "data" => $horarios
-            ];
-        } catch (PDOException $e) {
-            error_log("Error en ctrMostrarHorarios: " . $e->getMessage());
-            return [
-                "status" => 500,
-                "success" => false,
-                "message" => "Error al obtener los horarios."
-            ];
-        }
+        return [
+            "status" => 200,
+            "success" => true,
+            "message" => "Horarios obtenidos correctamente.",
+            "data" => $horarios
+        ];
     }
 
     /*=============================================
