@@ -89,6 +89,27 @@ class ModeloHorario {
         }
     }
 
+    // Método para mostrar horarios con JOIN a materias (subject_name)
+    public static function mdlMostrarHorariosConMaterias($teacherId) {
+        try {
+            $stmt = Conexion::conectar()->prepare("
+                SELECT ts.*, m.name as subject_name
+                FROM teacher_schedule ts
+                LEFT JOIN teacher_subject_assignments tsa ON ts.teacher_subject_assignment_id = tsa.assignment_id
+                LEFT JOIN subjects m ON tsa.subject_id = m.subject_id
+                WHERE ts.teacher_subject_assignment_id IN (
+                    SELECT assignment_id FROM teacher_subject_assignments WHERE teacher_id = :teacher_id
+                )
+                ORDER BY ts.day_of_week, ts.start_time
+            ");
+            $stmt->execute([":teacher_id" => $teacherId]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Error en mdlMostrarHorariosConMaterias: " . $e->getMessage());
+            return [];
+        }
+    }
+
     // Método para eliminar todos los horarios de un profesor
     public static function mdlEliminarHorariosProfesor($tabla, $teacher_id) {
         try {
