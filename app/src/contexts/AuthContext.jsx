@@ -17,14 +17,23 @@ export function AuthProvider({ children }) {
   }, [token])
 
   const login = useCallback(async (username, password) => {
-    const data = await api.post('login', { username, password })
+    const API_URL = import.meta.env.VITE_API_URL || '/api'
+    const res = await fetch(`${API_URL}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    })
+    const data = await res.json()
+    if (data.success === false) {
+      throw new Error(data.message || 'Error al iniciar sesión')
+    }
     if (data.token) {
       localStorage.setItem('authToken', data.token)
       setToken(data.token)
-      setUser(data.usuario || { username })
+      setUser(data.data?.username ? data.data : { username })
       return data
     }
-    throw new Error(data.error || 'Error al iniciar sesión')
+    throw new Error(data.message || 'Error al iniciar sesión')
   }, [])
 
   const logout = useCallback(async () => {
