@@ -1,30 +1,17 @@
 <?php
-/*=============================================
-   CONTROLADORES
-=============================================*/
 
-require_once "controladores/usuarios.controlador.php"; // controlador de usuarios
-require_once "controladores/estudiantes.controlador.php"; // controlador de estudiantes
-require_once "controladores/profesores.controlador.php"; // controlador de profesores
-require_once "controladores/habilidades.controlador.php"; // controlador de habilidades
-require_once "controladores/materias.controlador.php"; // controlador de materias
-require_once "controladores/horarios.controlador.php"; // controlador de horarios
-require_once "controladores/asignacionProfesores.controlador.php"; // controlador de asignar materias a profesores
-require_once "controladores/modulos.controlador.php"; // controlador de modulos
-require_once "controladores/router.controlador.php"; // controlador del enrutador
+/**
+ * =====================================================================
+ *  API · Sistema de Horarios Academicos IUTEPI
+ * ---------------------------------------------------------------------
+ *  Punto de entrada unico. Todo el trafico entra por aqui gracias al
+ *  rewrite del .htaccess; no hay ningun otro archivo PHP publico.
+ *
+ *  Requisitos: PHP 8.0+ con pdo_mysql, mbstring, json y curl.
+ *  Sin composer: la API se puede subir por FTP tal cual.
+ * =====================================================================
+ */
 
-/*=============================================
-   MODELOS
-=============================================*/
+require_once __DIR__ . '/app/Core/App.php';
 
-require_once "modelos/usuarios.modelo.php"; // controlador de usuarios
-require_once "modelos/estudiantes.modelo.php"; // controlador de estudiantes
-require_once "modelos/profesores.modelo.php"; // controlador de profesores
-require_once "modelos/habilidades.modelo.php"; // controlador de habilidades
-require_once "modelos/materias.modelo.php"; // controlador de materias
-require_once "modelos/horarios.modelo.php"; // controlador de horarios
-require_once "modelos/modulos.modelo.php"; // controlador de modulos
-
-
-$router = new ControladorRouter();
-$router->ctrRouter();
+App\Core\App::iniciar();

@@ -1,0 +1,58 @@
+# ============================================
+#  Horarios IUTEPI — archivos ignorados
+# ============================================
+
+# Material de referencia interno (horarios impresos, planillas del instituto)
+/resource/
+/resources/
+
+# Volcado de la base con datos de prueba. Se entrega aparte, no por el
+# repositorio: pesa cientos de kB, cambia en cada regeneracion de
+# horarios y lleva datos personales de ejemplo.
+/database/
+
+# Dependencias
+node_modules/
+vendor/
+.pnp
+.pnp.js
+
+# Builds
+.next/
+out/
+dist/
+build/
+
+# Entorno
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Logs y temporales
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+storage/logs/*.log
+storage/cache/*
+
+# Configuracion local de herramientas de IA (Claude Code)
+.claude/
+
+# Sistema operativo / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*~
+
+# Cobertura y tests
+coverage/
+.nyc_output/
+
+# Respaldos de base de datos generados localmente
+database/backups/
+*.sql.bak

@@ -1,6 +1,33 @@
-RewriteEngine On
+# =====================================================================
+#  API Horarios IUTEPI - reescritura a index.php
+# =====================================================================
 
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteCond %{REQUEST_FILENAME} !-d
+<IfModule mod_rewrite.c>
+    RewriteEngine On
 
-RewriteRule ^(.*)$ index.php?ruta=$1 [L,QSA]
+    # Pasar el header Authorization a PHP (CGI/FastCGI lo descarta)
+    RewriteCond %{HTTP:Authorization} ^(.+)$
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%1]
+
+    # Base dinamica: funciona en subcarpeta o en la raiz del dominio
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^(.*)$ index.php?ruta=$1 [L,QSA]
+</IfModule>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Nada de listados de directorio
+Options -Indexes
+
+# Bloquear acceso directo a archivos sensibles
+<FilesMatch "^(\.env|\.env\..*|composer\.(json|lock)|.*\.md|.*\.log)$">
+    Require all denied
+</FilesMatch>
+
+# La logica vive fuera del alcance publico
+RedirectMatch 404 ^/(.*/)?(app|routes|storage)/

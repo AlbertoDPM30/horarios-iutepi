@@ -1,0 +1,88 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-800 antialiased;
+    /* Evita el rebote horizontal en moviles chicos */
+    overflow-x: hidden;
+  }
+
+  /* Titulos: Poppins con el interletrado un pelo cerrado, que es como se
+     ve en el sitio institucional. */
+  h1, h2, h3, h4 {
+    @apply font-titulo;
+    letter-spacing: -0.015em;
+  }
+
+  /* Las cifras van tabulares para que las columnas de numeros queden
+     alineadas y no "bailen" al actualizarse. */
+  table, .numero, input[type='number'], input[type='time'], input[type='date'] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* Barra de desplazamiento discreta y consistente */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-slate-300;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400;
+  }
+
+  /* Los inputs de iOS no deben hacer zoom al enfocarse */
+  @media (max-width: 640px) {
+    input, select, textarea {
+      font-size: 16px;
+    }
+  }
+
+  ::selection {
+    @apply bg-marca-700 text-white;
+  }
+}
+
+@layer components {
+  .enlace {
+    @apply font-medium text-marca-700 underline-offset-2 transition hover:text-marca-800 hover:underline;
+  }
+
+  /* Cifra grande de las tarjetas de metrica */
+  .cifra {
+    @apply font-titulo font-semibold tracking-tight;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  /* Tarjeta de clase. Rellena todo el alto de los bloques que abarca,
+     asi el tamano de la tarjeta comunica la duracion de la materia. */
+  .celda-horario {
+    @apply rounded-lg px-2 py-1 text-left text-xs leading-tight transition;
+  }
+}
+
+@media print {
+  .no-imprimir {
+    display: none !important;
+  }
+  body {
+    @apply bg-white;
+  }
+  .imprimible {
+    box-shadow: none !important;
+    border-color: #d4d4d4 !important;
+  }
+}
